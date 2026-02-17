@@ -1,0 +1,182 @@
+{
+  "dfe5f5b9": {
+    "camera_name": "department-ip",
+    "latitude": 11.449611,
+    "common": "IT BUILDING",
+    "longitude": 77.403889,
+    "description": "Ai&ds depatment",
+    "timestamp": 1751609864.3264587
+  },
+  "366dd5aa": {
+    "camera_name": "webcam",
+    "latitude": 11.449,
+    "longitude": 77.4033,
+    "common": "IT BUILDING",
+    "description": "main building",
+    "timestamp": 1751610028.8792694
+  },
+  "366dd5ab": {
+    "camera_name": "Camera001",
+    "latitude": 11.4484,
+    "longitude": 77.4039,
+    "common": "SIDE BUILDING",
+    "description": "IT building",
+    "timestamp": 1751610028.8792694
+  },
+  "366dd5ac ": {
+    "camera_name": "Camera002",
+    "latitude": 11.4485,
+    "common": "IT BUILDING",
+    "longitude": 77.4038,
+    "description": "IT building 2 first floor",
+    "timestamp": 1751613491.0758061
+  },
+  "326b0e28": {
+    "camera_name": "rr",
+    "latitude": 11.449178,
+    "longitude": 77.402403,
+    "common": "MAIN BUILDING",
+    "description": "Commerce building",
+    "timestamp": 1751613747.8495054
+  },
+  "995a8970": {
+    "camera_name": "it Department",
+    "latitude": 11.44876,
+    "longitude": 77.403737,
+    "common": "AUDITORIAUM",
+    "description": "",
+    "timestamp": 1751954397.5001495
+  },
+  "d0a0e5ef": {
+    "camera_name": "it Department 3rd floor",
+    "latitude": 11.4488,
+    "longitude": 77.403044,
+    "common": "NEW BUILDING",
+    "description": "AI&Ds department",
+    "timestamp": 1751954628.1637588
+  },
+  "400bbf5a": {
+    "camera_name": "it department 4th floor",
+    "latitude": 11.4489,
+    "longitude": 77.40313,
+    "common": "NEW BUILDING",
+    "description": "it department",
+    "timestamp": 1751955861.9313948
+  },
+  "5b80b55f": {
+    "camera_name": "one",
+    "latitude": 11.44859,
+    "longitude": 77.40395,
+    "common": "NEW BUILDING",
+    "description": "AI&DS Department",
+    "timestamp": 1751956957.0931077
+  },
+  "a0ba77cb": {
+    "camera_name": "raghu",
+    "latitude": 11.44929,
+    "longitude": 77.40241,
+    "floor": "3",
+    "common": "NEW BUILDING",
+    "description": "bcom pa",
+    "timestamp": 1752045333.5463624
+  },
+  "7fcfb6ab": {
+    "camera_name": "three",
+    "latitude": 11.44873,
+    "longitude": 77.40351,
+    "floor": "3",
+    "common": "IT BUILDING",
+    "description": "iT BUILDING PATHWAY",
+    "timestamp": 1752051392.3902366
+  },
+  "90b306c9": {
+    "camera_name": "thooo",
+    "latitude": 11.448829,
+    "longitude": 77.40352,
+    "floor": "3",
+    "common": "IT BUILDING",
+    "description": "",
+    "timestamp": 1752052563.368046
+  },
+  "c74cb981": {
+    "camera_name": "ytgh",
+    "latitude": 11.44873,
+    "longitude": 77.40351,
+    "floor": "Ground",
+    "common": "IT BUILDING",
+    "description": "",
+    "timestamp": 1752195231.3304296
+  },
+  "d0a31cc2": {
+    "camera_name": "two",
+    "latitude": 11.4494,
+    "longitude": 77.402,
+    "floor": "Ground",
+    "common": "",
+    "description": "",
+    "timestamp": 1752732852.4255283
+  },
+  "f5c0c482": {
+    "camera_name": "pp",
+    "latitude": 11.448829,
+    "longitude": 77.40352,
+    "floor": "Ground",
+    "common": "",
+    "description": "",
+    "timestamp": 1752748501.5992212
+  },
+  "f4b02bd8": {
+    "camera_name": "ooo",
+    "latitude": 11.448829,
+    "longitude": 77.40352,
+    "floor": "Ground",
+    "common": "IT BUILDING",
+    "description": "",
+    "timestamp": 1753682817.965152
+  },
+  "137b51b0": {
+    "camera_name": "test1",
+    "latitude": 10.87047,
+    "longitude": 76.92716,
+    "floor": "Ground",
+    "common": "NGI",
+    "description": "",
+    "timestamp": 1754574823.9701715
+  },
+  "c228c4d0": {
+    "camera_name": "test23",
+    "latitude": 10.87047,
+    "longitude": 76.92716,
+    "floor": "Ground",
+    "common": "building",
+    "description": "",
+    "timestamp": 1754629757.04575
+  },
+  "f446989c": {
+    "camera_name": "test44",
+    "latitude": 10.87047,
+    "longitude": 76.92716,
+    "floor": "Ground",
+    "common": "IT",
+    "description": "",
+    "timestamp": 1754825995.2525475
+  },
+  "2c8e81d8": {
+    "camera_name": "godown",
+    "latitude": 11.449611,
+    "longitude": 77.403889,
+    "floor": "Ground",
+    "common": "",
+    "description": "",
+    "timestamp": 1766549239.241364
+  },
+  "86c1a3b3": {
+    "camera_name": "obe",
+    "latitude": 11.449611,
+    "longitude": 77.403889,
+    "floor": "Ground",
+    "common": "IT",
+    "description": "",
+    "timestamp": 1771058195.4515498
+  }
+}

@@ -1,0 +1,66 @@
+{
+    "137b51b0": {
+        "camera_name": "test1",
+        "camera_type": "webcam",
+        "started_time": "2025-08-07T19:20:56.896602",
+        "status": "active"
+    },
+    "eb767c02": {
+        "camera_name": "test1",
+        "camera_type": "webcam",
+        "started_time": "2025-08-07T19:26:16.728205",
+        "status": "active"
+    },
+    "c228c4d0": {
+        "camera_name": "test23",
+        "camera_type": "webcam",
+        "started_time": "2025-08-08T10:28:39.404822",
+        "status": "active"
+    },
+    "f446989c": {
+        "camera_name": "test44",
+        "camera_type": "webcam",
+        "started_time": "2025-08-08T15:15:39.687431",
+        "status": "active"
+    },
+    "db75e4f4": {
+        "camera_name": "two",
+        "camera_type": "ip_camera",
+        "started_time": "2025-09-18T10:12:52.612827",
+        "status": "active"
+    },
+    "fa124d57": {
+        "camera_name": "three",
+        "camera_type": "ip_camera",
+        "started_time": "2025-09-18T13:43:40.454297",
+        "status": "active"
+    },
+    "872f220d": {
+        "camera_name": "ttt",
+        "camera_type": "webcam",
+        "started_time": "2025-09-22T14:02:21.078697",
+        "status": "active"
+    },
+    "6dab7fd5": {
+        "camera_name": "rty",
+        "camera_type": "webcam",
+        "quality": 75,
+        "fps": 15,
+        "started_time": "2025-09-24T11:01:45.009209",
+        "status": "active"
+    },
+    "ca4e34a5": {
+        "camera_name": "ooo",
+        "camera_type": "webcam",
+        "started_time": "2025-09-24T12:48:32.792184",
+        "status": "active"
+    },
+    "05a8d9d6": {
+        "camera_name": "ooooo",
+        "camera_type": "webcam",
+        "quality": 75,
+        "fps": 15,
+        "started_time": "2025-12-01T12:35:01.546468",
+        "status": "active"
+    }
+}

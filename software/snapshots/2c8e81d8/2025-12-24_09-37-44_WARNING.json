@@ -1,0 +1,14 @@
+{
+  "camera_id": "2c8e81d8",
+  "timestamp": "2025-12-24T09:37:44.643628",
+  "alert_level": "WARNING",
+  "confidence_score": 0.5939980879632738,
+  "temporal_detections": 2,
+  "window_size": 5,
+  "detections": [],
+  "is_night_mode": false,
+  "rules_applied": [
+    "bbox_size",
+    "movement_consistency"
+  ]
+}

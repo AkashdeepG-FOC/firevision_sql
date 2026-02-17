@@ -1,0 +1,25 @@
+{
+  "mobile_settings": {
+    "app_url": "http://192.168.1.4:58766",
+    "timeout": 5,
+    "retry_attempts": 3,
+    "notification_enabled": true,
+    "screenshot_quality": 85,
+    "alert_cooldown_seconds": 5
+  },
+  "flutter_app": {
+    "endpoints": {
+      "fire_alert": "/fire_alert",
+      "health": "/health",
+      "test": "/test"
+    },
+    "supported_formats": ["jpg", "jpeg", "png"],
+    "max_file_size_mb": 10
+  },
+  "notification_preferences": {
+    "send_to_backend": true,
+    "send_to_mobile": true,
+    "save_screenshots_locally": true,
+    "cleanup_old_screenshots_hours": 24
+  }
+}

@@ -1,0 +1,3 @@
+Timestamp,Event Type,Camera,Confidence,Details
+2025-12-03 15:51:43.543070,Fire Detected,Camera 1,0.85,Location: Kitchen
+2025-12-03 15:51:43.543070,Motion Detected,Camera 2,0.92,Location: Entrance

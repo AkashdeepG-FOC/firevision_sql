@@ -1,0 +1,38 @@
+{
+    "build_profile": "balanced",
+    "models_to_include": [
+        "yolov8n.pt",
+        "best_m.pt"
+    ],
+    "models_excluded": [
+        "custom_model.pt"
+    ],
+    "enable_upx": true,
+    "upx_level": 9,
+    "exclude_voice_commands": false,
+    "exclude_google_drive": false,
+    "strip_debug": true,
+    "optimize_level": 2,
+    "onefile": true,
+    "console": false,
+    "icon": "icon.ico",
+    "target_size_mb": 400,
+    "compression_settings": {
+        "upx_enabled": true,
+        "strip_symbols": true,
+        "optimize_bytecode": true
+    },
+    "module_exclusions": [
+        "onnx",
+        "onnxruntime",
+        "tensorboard",
+        "tensorflow",
+        "keras",
+        "matplotlib",
+        "seaborn",
+        "pandas",
+        "scipy",
+        "jax",
+        "jaxlib"
+    ]
+}

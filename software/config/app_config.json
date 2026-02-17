@@ -1,0 +1,77 @@
+{
+    "app_settings": {
+        "auto_start_cameras": true,
+        "auto_start_streaming": true,
+        "remember_login": true,
+        "detection_confidence": 0.5,
+        "stream_quality": 75,
+        "stream_fps": 15,
+        "recording_format": "mp4",
+        "auto_upload_to_drive": false,
+        "close_notification_shown": true
+    },
+    "server_settings": {
+        "stream_server_url": "http://localhost:5000",
+        "auto_start_server": true
+    },
+    "last_login": {
+        "username": "redmi",
+        "remember": true,
+        "login_time": "2025-12-01T12:34:53.971778"
+    },
+    "cameras": {
+        "f5c0c482": {
+            "people_detection": {
+                "enabled": true,
+                "always_on": true,
+                "alarm_enabled": true,
+                "min_count": 1,
+                "start_time": "20:00",
+                "end_time": "06:00"
+            },
+            "fire_detection": {
+                "enabled": true,
+                "always_on": true,
+                "alarm_enabled": true,
+                "fire_enabled": true,
+                "smoke_enabled": true,
+                "confidence_threshold": 70,
+                "start_time": "00:00",
+                "end_time": "23:59"
+            },
+            "sensitivity": {
+                "people_confidence": 50,
+                "fire_confidence": 70
+            }
+        },
+        "f4b02bd8": {
+            "people_detection": {
+                "enabled": true,
+                "always_on": false,
+                "alarm_enabled": true,
+                "min_count": 1,
+                "start_time": "20:00",
+                "end_time": "06:00"
+            },
+            "fire_detection": {
+                "enabled": false,
+                "always_on": false,
+                "alarm_enabled": true,
+                "fire_enabled": true,
+                "smoke_enabled": true,
+                "confidence_threshold": 70,
+                "start_time": "00:00",
+                "end_time": "23:59"
+            },
+            "sensitivity": {
+                "people_confidence": 50,
+                "fire_confidence": 70
+            }
+        }
+    },
+    "mobile_alerts": {
+        "enabled": true,
+        "ip": "192.168.1.51",
+        "port": 58766
+    }
+}

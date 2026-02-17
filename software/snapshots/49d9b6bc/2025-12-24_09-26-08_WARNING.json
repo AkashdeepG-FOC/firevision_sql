@@ -1,0 +1,26 @@
+{
+  "camera_id": "49d9b6bc",
+  "timestamp": "2025-12-24T09:26:08.958852",
+  "alert_level": "WARNING",
+  "confidence_score": 0.49628418803215024,
+  "temporal_detections": 1,
+  "window_size": 5,
+  "detections": [
+    {
+      "bbox": [
+        0,
+        325,
+        360,
+        598
+      ],
+      "confidence": 0.5028537511825562,
+      "type": "smoke",
+      "class_id": 1
+    }
+  ],
+  "is_night_mode": false,
+  "rules_applied": [
+    "bbox_size",
+    "movement_consistency"
+  ]
+}

@@ -1,0 +1,16 @@
+# Build requirements for creating executable
+pyinstaller>=5.0
+cx_freeze>=6.0
+auto-py-to-exe>=2.0
+pillow>=9.0
+
+# Runtime requirements (already in install_requirements.py)
+PyQt5>=5.15.0
+opencv-python>=4.5.0
+ultralytics>=8.0.0
+numpy>=1.21.0
+requests>=2.25.0
+websocket-client>=1.0.0
+google-api-python-client>=2.0.0
+google-auth-httplib2>=0.1.0
+google-auth-oauthlib>=0.5.0

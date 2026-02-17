@@ -1,0 +1,141 @@
+{
+  "cameras": {},
+  "general": {
+    "language": "English",
+    "theme_mode": "Dark",
+    "auto_start_boot": false,
+    "start_minimized": false,
+    "show_notifications": true,
+    "default_save_location": "./logs"
+  },
+  "fire_detection": {
+    "model_selection": "YOLOv8n",
+    "model_path": "best_m.pt",
+    "detection_confidence": 0.5,
+    "nms_threshold": 0.45,
+    "fire_sensitivity": "Medium",
+    "smoke_sensitivity": "Medium",
+    "roi_enabled": false,
+    "roi_regions": [],
+    "performance_mode": "Balanced"
+  },
+  "controller": {
+    "esp32_ip": "",
+    "is_connected": false
+  },
+  "camera": {
+    "source_type": "Laptop Cam",
+    "ip_camera_url": "",
+    "frame_size": "720p",
+    "frame_rate": 30,
+    "brightness": 50,
+    "contrast": 50,
+    "saturation": 50,
+    "ai_processing_mode": "Full Frame"
+  },
+  "alerts": {
+    "sound_alert": true,
+    "email_alert": false,
+    "desktop_notification": true,
+    "alert_sound_file": "assests/audio/alarm.mp3",
+    "cooldown_time": 10,
+    "repeated_alerts": true,
+    "alert_message_template": "🔥 Fire detected at {location} on {date} at {time}"
+  },
+  "logging": {
+    "enable_logging": true,
+    "log_text": true,
+    "log_images": true,
+    "log_videos": false,
+    "auto_cleanup_enabled": true,
+    "keep_logs_days": 30,
+    "max_storage_mb": 1000
+  },
+  "cloud": {
+    "cloud_enabled": false,
+    "api_key": "",
+    "sync_events": false,
+    "cloud_dashboard_url": ""
+  },
+  "security": {
+    "password_protection": false,
+    "password_hash": "",
+    "user_role": "Admin",
+    "encrypt_logs": false
+  },
+  "storage": {
+    "path": "./recordings",
+    "limit": 500,
+    "auto_delete": true,
+    "compression": "medium"
+  },
+  "detection": {
+    "motion_sensitivity": 0.5,
+    "object_confidence": 0.7,
+    "notifications": true,
+    "sound_alerts": false,
+    "email_alerts": false,
+    "email_settings": {
+      "smtp_server": "",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "recipients": []
+    }
+  },
+  "recording": {
+    "auto_record": true,
+    "record_on_motion": true,
+    "pre_record_seconds": 5,
+    "post_record_seconds": 10,
+    "quality": "high",
+    "fps": 20
+  },
+  "system": {
+    "startup": false,
+    "minimize_to_tray": false,
+    "dark_theme": true,
+    "language": "en",
+    "log_level": "info",
+    "use_gpu": true,
+    "hardware_acceleration": true,
+    "auto_update": true,
+    "check_updates_on_start": true,
+    "auto_mode_optimizer": true,
+    "nvr_mode_enabled": true,
+    "optimization_mode": "Standard",
+    "hardware_specs": {
+      "ram_gb": 15.7,
+      "cpu_cores": 12,
+      "has_gpu": true,
+      "disk_speed_mbps": 678,
+      "os": "Windows"
+    }
+  },
+  "network": {
+    "web_interface_enabled": false,
+    "web_interface_port": 8080,
+    "remote_access": false,
+    "stream_quality": "medium"
+  },
+  "ui": {
+    "grid_columns": 2,
+    "show_timestamps": true,
+    "show_camera_names": true,
+    "fullscreen_on_doubleclick": true
+  },
+  "email": {
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "smtp_username": "",
+    "smtp_password": "",
+    "from_email": "",
+    "to_emails": []
+  },
+  "about": {
+    "version": "1.0.0",
+    "build_date": "2025-12-09",
+    "developer": "FireVision Team",
+    "support_email": "support@firevision.com"
+  }
+}

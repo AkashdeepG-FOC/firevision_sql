@@ -1,0 +1,44 @@
+[
+  {
+    "id": "0aa7aeed",
+    "name": "godown",
+    "source": "D:/giit/FIrevision_demo/video/Untitled video - Made with Clipchamp (2).mp4",
+    "type": "video_file"
+  },
+  {
+    "id": "86c1a3b3",
+    "name": "obe",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "2758b898",
+    "name": "one",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "143432d1",
+    "name": "ooo",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "da43f75a",
+    "name": "one",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "df546afe",
+    "name": "oooo",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "aa53e650",
+    "name": "oooo",
+    "source": 0,
+    "type": "webcam"
+  }
+]

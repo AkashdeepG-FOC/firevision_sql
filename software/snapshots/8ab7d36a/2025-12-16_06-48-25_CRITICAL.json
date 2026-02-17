@@ -1,0 +1,26 @@
+{
+  "camera_id": "8ab7d36a",
+  "timestamp": "2025-12-16T06:48:25.555131",
+  "alert_level": "CRITICAL",
+  "confidence_score": 0.8229062423677328,
+  "temporal_detections": 5,
+  "window_size": 5,
+  "detections": [
+    {
+      "bbox": [
+        268,
+        161,
+        324,
+        253
+      ],
+      "confidence": 0.5982858538627625,
+      "type": "fire",
+      "class_id": 0
+    }
+  ],
+  "is_night_mode": false,
+  "rules_applied": [
+    "bbox_size",
+    "movement_consistency"
+  ]
+}

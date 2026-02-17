@@ -1,0 +1,179 @@
+
+D:\giit\FIrevision_demo\python_client>pyinstaller main.py --onefile --windowed --noconfirm --clean   --add-data "config;config"   --add-data "assests/icons;icons"   --add-data "assests;assests"   --hidden-import=ui_components   --hidden-import=PyQt5.QtCore   --hidden-import=PyQt5.QtGui   --hidden-import=PyQt5.QtWidgets   --hidden-import=PyQt5.QtNetwork   --hidden-import=PyQt5.QtMultimedia   --hidden-import=PyQt5.QtMultimediaWidgets   --hidden-import=PyQt5.QtPrintSupport   --hidden-import=DeviceSettings   --hidden-import=AdvancedCamera   --hidden-import=config_manager   --hidden-import=background_service   --hidden-import=google_drive_manager   --hidden-import=recordings_page   --hidden-import=recording_manager   --hidden-import=stream_manager   --hidden-import=enhanced_camera_manager   --hidden-import=enhanced_fullscreen_widget   --hidden-import=enhanced_review_system   --hidden-import=fire_detection_backend   --hidden-import=notification_manager   --hidden-import=alerts_manager   --hidden-import=cloud_backup_manager   --hidden-import=user_managers   --hidden-import=voice_command_manager   --hidden-import=splash_screen   --exclude-module torch   --exclude-module tensorflow   --exclude-module pandas   --exclude-module scipy   --exclude-module skimage   --exclude-module matplotlib   --exclude-module ultralytics   --exclude-module openvino   --exclude-module onnxruntime 
+285 INFO: PyInstaller: 6.14.1, contrib hooks: 2025.5
+285 INFO: Python: 3.11.9
+295 INFO: Platform: Windows-10-10.0.26120-SP0
+295 INFO: Python environment: C:\Users\indha\AppData\Local\Programs\Python\Python311
+296 INFO: wrote D:\giit\FIrevision_demo\python_client\main.spec
+300 INFO: Removing temporary files and cleaning cache in C:\Users\indha\AppData\Local\pyinstaller
+354 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\pyinstaller.exe',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\python311.zip',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\DLLs',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311',
+ 'C:\\Users\\indha\\AppData\\Roaming\\Python\\Python311\\site-packages',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\win32',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\win32\\lib',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\Pythonwin',
+ 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\setuptools\\_vendor',
+ 'D:\\giit\\FIrevision_demo\\python_client']
+pygame 2.6.1 (SDL 2.28.4, Python 3.11.9)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+1062 INFO: Appending 'datas' from .spec
+1067 INFO: checking Analysis
+1067 INFO: Building Analysis because Analysis-00.toc is non existent
+1067 INFO: Running Analysis Analysis-00.toc
+1067 INFO: Target bytecode optimization level: 0
+1068 INFO: Initializing module dependency graph...
+1068 INFO: Initializing module graph hook caches...
+1083 INFO: Analyzing modules for base_library.zip ...
+2266 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+2326 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+3839 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+5008 INFO: Caching module dependency graph...
+5045 INFO: Looking for Python shared library...
+5052 INFO: Using Python shared library: C:\Users\indha\AppData\Local\Programs\Python\Python311\python311.dll
+5052 INFO: Analyzing D:\giit\FIrevision_demo\python_client\main.py
+5151 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+5688 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+6166 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+6326 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+6440 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+6938 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+7863 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+8064 INFO: Processing standard module hook 'hook-psutil.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+9147 INFO: Processing standard module hook 'hook-PyQt5.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+9897 INFO: Processing standard module hook 'hook-PyQt5.QtWidgets.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+10482 INFO: Processing standard module hook 'hook-PyQt5.QtCore.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+11117 INFO: Processing standard module hook 'hook-PyQt5.QtGui.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+11379 INFO: Processing standard module hook 'hook-folium.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+11397 INFO: Processing standard module hook 'hook-branca.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+11416 INFO: Processing standard module hook 'hook-jinja2.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+11424 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+11425 INFO: SetuptoolsInfo: initializing cached setuptools info...
+328 WARNING: Failed to collect submodules for 'setuptools._vendor.typeguard' because importing 'setuptools._vendor.typeguard' raised: ModuleNotFoundError: No module named 'typeguard._config'
+12364 INFO: Processing standard module hook 'hook-urllib3.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+12395 INFO: Processing pre-safe-import-module hook 'hook-urllib3.packages.six.moves.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+13277 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+13386 INFO: Processing standard module hook 'hook-cryptography.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+14234 INFO: hook-cryptography: cryptography does not seem to be using dynamically linked OpenSSL.
+14418 INFO: Processing standard module hook 'hook-bcrypt.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+14442 INFO: Processing standard module hook 'hook-certifi.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+14585 INFO: Processing standard module hook 'hook-xyzservices.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+14633 INFO: Processing standard module hook 'hook-PyQt5.QtWebEngineWidgets.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+14793 INFO: Processing standard module hook 'hook-PyQt5.QtNetwork.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+14975 INFO: Processing standard module hook 'hook-PyQt5.QtPrintSupport.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+15070 INFO: Processing standard module hook 'hook-PyQt5.QtWebEngineCore.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+15190 INFO: Processing standard module hook 'hook-PyQt5.QtWebChannel.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+15344 INFO: Processing standard module hook 'hook-speech_recognition.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+15408 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+15420 INFO: Processing standard module hook 'hook-google.api_core.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+15732 INFO: Processing standard module hook 'hook-grpc.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+16077 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+16136 INFO: Processing standard module hook 'hook-regex.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+16352 INFO: Processing standard module hook 'hook-numba.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+16510 INFO: Processing standard module hook 'hook-llvmlite.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+17069 INFO: Processing standard module hook 'hook-pygments.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+18539 INFO: Processing standard module hook 'hook-pycparser.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+18909 INFO: Processing standard module hook 'hook-setuptools.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+18918 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+18919 INFO: Processing pre-find-module-path hook 'hook-distutils.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+19144 INFO: Processing standard module hook 'hook-distutils.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+19158 INFO: Processing standard module hook 'hook-distutils.util.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+19185 INFO: Processing standard module hook 'hook-_osx_support.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+19202 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19293 INFO: Processing pre-safe-import-module hook 'hook-jaraco.text.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19293 INFO: Setuptools: 'jaraco.text' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.text'!
+19300 INFO: Processing standard module hook 'hook-setuptools._vendor.jaraco.text.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+19301 INFO: Processing pre-safe-import-module hook 'hook-jaraco.functools.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19302 INFO: Setuptools: 'jaraco.functools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.functools'!
+19307 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19444 INFO: Processing pre-safe-import-module hook 'hook-jaraco.context.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19445 INFO: Setuptools: 'jaraco.context' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.context'!
+19450 INFO: Processing pre-safe-import-module hook 'hook-backports.tarfile.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19451 INFO: Setuptools: 'backports.tarfile' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.backports.tarfile'!
+19508 INFO: Processing standard module hook 'hook-backports.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+19558 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19558 INFO: Setuptools: 'importlib_metadata' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.importlib_metadata'!
+19574 INFO: Processing standard module hook 'hook-setuptools._vendor.importlib_metadata.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+19575 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19576 INFO: Setuptools: 'zipp' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.zipp'!
+19858 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+19858 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+20603 INFO: Processing standard module hook 'hook-pkg_resources.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+20947 INFO: Processing pre-safe-import-module hook 'hook-platformdirs.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+20949 INFO: Setuptools: 'platformdirs' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.platformdirs'!
+21138 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+24926 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+24986 INFO: Processing standard module hook 'hook-win32com.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+24988 INFO: Processing standard module hook 'hook-pythoncom.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+25055 INFO: Processing standard module hook 'hook-pywintypes.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+25996 INFO: Processing standard module hook 'hook-pyttsx3.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+26139 INFO: Processing standard module hook 'hook-pygame.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pygame\\__pyinstaller'
+27044 INFO: Processing standard module hook 'hook-httplib2.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+27375 INFO: Processing standard module hook 'hook-googleapiclient.model.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+27962 INFO: Processing standard module hook 'hook-PyQt5.QtMultimedia.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+28124 INFO: Processing standard module hook 'hook-PyQt5.QtMultimediaWidgets.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+28400 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+28791 INFO: Processing module hooks (post-graph stage)...
+29752 INFO: Processing standard module hook 'hook-comtypes.client.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+30527 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+30633 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+30958 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+31013 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+31439 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+32954 WARNING: Hidden import "sip" not found!
+32975 INFO: Processing standard module hook 'hook-PyQt5.QtPositioning.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+33185 INFO: Processing standard module hook 'hook-PyQt5.QtQuick.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+33300 INFO: Processing standard module hook 'hook-PyQt5.QtQml.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+33898 INFO: Processing standard module hook 'hook-PyQt5.QtQuickWidgets.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+34543 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+34600 INFO: Performing binary vs. data reclassification (2207 entries)
+34796 INFO: Looking for ctypes DLLs
+35369 INFO: Analyzing run-time hooks ...
+35376 INFO: Including run-time hook 'pyi_rth_pyqt5.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35378 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+35380 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks'
+35383 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35384 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35386 INFO: Including run-time hook 'pyi_rth_cryptography_openssl.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+35387 INFO: Including run-time hook 'pyi_rth_pkgres.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35390 INFO: Including run-time hook 'pyi_rth_setuptools.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35391 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+35391 INFO: Including run-time hook 'pyi_rth_pywintypes.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+35393 INFO: Including run-time hook 'pyi_rth_pythoncom.py' from 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+35508 INFO: Creating base_library.zip...
+35565 INFO: Looking for dynamic libraries
+C:\Users\indha\AppData\Local\Programs\Python\Python311\Lib\site-packages\PyInstaller\building\build_main.py:227: UserWarning: The numpy.array_api submodule is still experimental. See NEP 47.
+  __import__(package)
+pygame 2.6.1 (SDL 2.28.4, Python 3.11.9)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+39356 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyQt5\\Qt5\\bin', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pygame', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\.libs', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\torch\\lib', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy.libs', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pandas.libs', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\pyarrow.libs', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\cv2\\../../x64/vc14/bin']
+39356 INFO: Extra DLL search directories (PATH): ['C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\cv2\\../../x64/vc14/bin', 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\PyQt5\\Qt5\\bin']
+42072 WARNING: Library not found: could not resolve 'tbb12.dll', dependency of 'C:\\Users\\indha\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numba\\np\\ufunc\\tbbpool.cp311-win_amd64.pyd'.
+42236 INFO: Warnings written to D:\giit\FIrevision_demo\python_client\build\main\warn-main.txt
+42405 INFO: Graph cross-reference written to D:\giit\FIrevision_demo\python_client\build\main\xref-main.html
+42494 INFO: checking PYZ
+42494 INFO: Building PYZ because PYZ-00.toc is non existent
+42495 INFO: Building PYZ (ZlibArchive) D:\giit\FIrevision_demo\python_client\build\main\PYZ-00.pyz
+45020 INFO: Building PYZ (ZlibArchive) D:\giit\FIrevision_demo\python_client\build\main\PYZ-00.pyz completed successfully.
+45091 INFO: checking PKG
+45091 INFO: Building PKG because PKG-00.toc is non existent
+45091 INFO: Building PKG (CArchive) main.pkg
+102088 INFO: Building PKG (CArchive) main.pkg completed successfully.
+102128 INFO: Bootloader C:\Users\indha\AppData\Local\Programs\Python\Python311\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+102128 INFO: checking EXE
+102129 INFO: Building EXE because EXE-00.toc is non existent
+102129 INFO: Building EXE from EXE-00.toc
+102158 INFO: Copying bootloader EXE to D:\giit\FIrevision_demo\python_client\dist\main.exe
+102207 INFO: Copying icon to EXE
+102245 INFO: Copying 0 resources to EXE
+102245 INFO: Embedding manifest in EXE
+102250 INFO: Appending PKG archive to EXE
+102467 INFO: Fixing EXE headers
+117389 INFO: Building EXE from EXE-00.toc completed successfully.
+117433 INFO: Build complete! The results are available in: D:\giit\FIrevision_demo\python_client\dist
+pygame 2.6.1 (SDL 2.28.4, Python 3.11.9)
+Hello from the pygame community. https://www.pygame.org/contribute.html

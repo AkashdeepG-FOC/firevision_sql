@@ -1,0 +1,41 @@
+# Core dependencies
+opencv-python>=4.5.0
+numpy>=1.19.0
+PyQt5>=5.15.0
+requests>=2.25.0
+websocket-client>=1.2.0
+
+# AI/ML dependencies
+ultralytics>=8.0.0
+torch>=1.9.0
+torchvision>=0.10.0
+
+# PyQt5 additional modules
+PyQt5-QtWebEngine>=5.15.0
+PyQt5-QtMultimedia>=5.15.0
+PyQt5-QtMultimediaWidgets>=5.15.0
+
+# Web and mapping
+folium>=0.12.0
+
+# Google API integration
+google-api-python-client>=2.0.0
+google-auth-httplib2>=0.1.0
+google-auth-oauthlib>=0.5.0
+
+# Image processing
+pillow>=9.0.0
+
+# Voice command dependencies
+SpeechRecognition>=3.8.1
+pyttsx3>=2.90
+pyaudio>=0.2.11
+openai-whisper>=20231117
+pydub>=0.25.1
+noisereduce>=3.0.1
+webrtcvad>=2.0.10
+
+# Optional build dependencies (for creating executables)
+# pyinstaller>=5.0
+# cx_freeze>=6.0
+# auto-py-to-exe>=2.0
