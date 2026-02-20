@@ -75689,5 +75689,205 @@
     "description": "Fire event detected on obe",
     "reviewed": false,
     "bookmarked": false
+  },
+  "09f21177_1771323618": {
+    "clip_id": "09f21177_1771323618",
+    "camera_id": "09f21177",
+    "camera_name": "Unknown Camera",
+    "event_type": "combined",
+    "start_time": 1771323613.1500943,
+    "end_time": 1771323633.1974711,
+    "duration": 20.04737687110901,
+    "file_path": "event_clips\\09f21177_1771323618.mp4",
+    "thumbnail_path": "event_thumbnails\\09f21177_1771323618.jpg",
+    "fire_detections": [
+      {
+        "bbox": [
+          9,
+          1,
+          612,
+          480
+        ],
+        "center": [
+          310,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.6624059677124023,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          9,
+          1,
+          612,
+          480
+        ],
+        "center": [
+          310,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.6624059677124023,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          9,
+          1,
+          612,
+          480
+        ],
+        "center": [
+          310,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.6624059677124023,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          3,
+          1,
+          629,
+          480
+        ],
+        "center": [
+          316,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.7471156120300293,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          3,
+          1,
+          629,
+          480
+        ],
+        "center": [
+          316,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.7471156120300293,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          3,
+          0,
+          636,
+          480
+        ],
+        "center": [
+          319,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.7725743651390076,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          0,
+          2,
+          222,
+          480
+        ],
+        "center": [
+          111,
+          241
+        ],
+        "class_id": 1,
+        "confidence": 0.5875340700149536,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          3,
+          0,
+          636,
+          480
+        ],
+        "center": [
+          319,
+          240
+        ],
+        "class_id": 1,
+        "confidence": 0.7725743651390076,
+        "type": "smoke"
+      },
+      {
+        "bbox": [
+          0,
+          2,
+          222,
+          480
+        ],
+        "center": [
+          111,
+          241
+        ],
+        "class_id": 1,
+        "confidence": 0.5875340700149536,
+        "type": "smoke"
+      }
+    ],
+    "smoke_detections": [],
+    "panic_behaviors": [
+      {
+        "behavior_type": "falling",
+        "confidence": 0.736904761904762,
+        "timestamp": 1771323618.1474807,
+        "bbox": [
+          0,
+          57,
+          619,
+          477
+        ],
+        "severity": "high"
+      }
+    ],
+    "max_confidence": 0.7725743651390076,
+    "severity_level": "high",
+    "description": "Panic event detected on Unknown Camera",
+    "reviewed": false,
+    "bookmarked": false
+  },
+  "5_1771565641": {
+    "clip_id": "5_1771565641",
+    "camera_id": "5",
+    "camera_name": "Unknown Camera",
+    "event_type": "panic",
+    "start_time": 1771565636.5886972,
+    "end_time": 1771565656.6308749,
+    "duration": 20.04217767715454,
+    "file_path": "event_clips\\5_1771565641.mp4",
+    "thumbnail_path": "event_thumbnails\\5_1771565641.jpg",
+    "fire_detections": [],
+    "smoke_detections": [],
+    "panic_behaviors": [
+      {
+        "behavior_type": "falling",
+        "confidence": 0.6272493573264781,
+        "timestamp": 1771565641.587264,
+        "bbox": [
+          62,
+          90,
+          550,
+          479
+        ],
+        "severity": "high"
+      }
+    ],
+    "max_confidence": 0.6272493573264781,
+    "severity_level": "high",
+    "description": "Panic event detected on Unknown Camera",
+    "reviewed": false,
+    "bookmarked": false
   }
 }

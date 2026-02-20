@@ -327,20 +327,41 @@ class ConfigManager:
     def load_cameras(self) -> Dict:
         """Load cameras from Backend API"""
         try:
+            print("DEBUG: Calling backend_client.get_cameras()...")
             api_cameras = backend_client.get_cameras()
+            print(f"DEBUG: backend_client returned {len(api_cameras)} cameras: {api_cameras}")
+            
             # Convert list back to dict format expected by the app
             cameras_dict = {}
             for cam in api_cameras:
                 # Map backend fields to frontend expected fields
                 cam_id = str(cam.get("id"))
+                
+                # Determine source and type from ip_address
+                source = cam.get("ip_address")
+                cam_type = "ip_camera"
+                
+                if source == "local_webcam":
+                    cam_type = "webcam"
+                    source = "0"
+                elif source and source.isdigit():
+                    cam_type = "webcam"
+                elif source and (source.endswith('.mp4') or source.endswith('.avi') or source.endswith('.mkv')):
+                    cam_type = "video_file"
+                    
                 cameras_dict[cam_id] = {
                     "id": cam_id,
                     "name": cam.get("camera_name"),
                     "ip_address": cam.get("ip_address"),
+                    "source": source, # Essential for frontend
+                    "type": cam_type, # Essential for frontend
                     "location": cam.get("location"),
                     "status": cam.get("status", "inactive"),
-                    "owner": self._current_user # Assuming logged in user is owner or has access
+                    "owner": self._current_user,
+                    "auto_start": True, # Ensure auto-start
+                    "stream_enabled": True # Ensure stream enabled
                 }
+            print(f"DEBUG: Processed {len(cameras_dict)} cameras for dict.")
             return cameras_dict
         except Exception as e:
             print(f"Error loading cameras from API: {e}")
@@ -362,7 +383,7 @@ class ConfigManager:
             
         result = backend_client.create_camera(
             name=camera_data.get("name"),
-            ip_address=camera_data.get("ip_address"),
+            ip_address=camera_data.get("ip_address") or camera_data.get("source"),
             location=camera_data.get("location", ""),
             status=camera_data.get("status", "active")
         )

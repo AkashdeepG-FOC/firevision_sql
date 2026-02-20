@@ -943,5 +943,51 @@
     "acknowledged_at": null,
     "resolved_by": null,
     "resolved_at": null
+  },
+  {
+    "id": "people_09f21177_1771323618",
+    "camera_id": "09f21177",
+    "camera_name": "onee",
+    "alert_type": "people",
+    "severity": "medium",
+    "timestamp": 1771323618.0888858,
+    "confidence": 0.8884603381156921,
+    "description": "2 person(s) detected with 88.8% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-02-17T15:50:18.088885",
+      "people_count": 2,
+      "camera_location": "onee",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null
+  },
+  {
+    "id": "people_5_1771565641",
+    "camera_id": "5",
+    "camera_name": "oooo",
+    "alert_type": "people",
+    "severity": "high",
+    "timestamp": 1771565641.543389,
+    "confidence": 0.9080884456634521,
+    "description": "1 person(s) detected with 90.8% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-02-20T11:04:01.543389",
+      "people_count": 1,
+      "camera_location": "oooo",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null
   }
 ]

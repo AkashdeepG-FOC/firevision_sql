@@ -78,6 +78,7 @@ class BackendClient:
             )
             if response.status_code == 200:
                 return response.json()
+            print(f"DEBUG: get_cameras failed with status {response.status_code}: {response.text}")
             return []
         except Exception as e:
             print(f"Error getting cameras: {e}")

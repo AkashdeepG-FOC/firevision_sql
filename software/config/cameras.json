@@ -40,5 +40,17 @@
     "name": "oooo",
     "source": 0,
     "type": "webcam"
+  },
+  {
+    "id": "09f21177",
+    "name": "onee",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "5",
+    "name": "oooo",
+    "source": "0",
+    "type": "webcam"
   }
 ]

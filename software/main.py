@@ -93,6 +93,18 @@ except ImportError:
         def show_with_progress(self): pass
         def close(self): pass
 
+# Import the loading screen
+try:
+    from loading_screen import LoadingScreen
+except ImportError:
+    print("Warning: Loading screen not available")
+    class LoadingScreen:
+        def __init__(self): pass
+        def show_with_fade(self): pass
+        def update_status(self, message, progress=None): pass
+        def complete_loading(self): pass
+        def hide_with_fade(self): pass
+
 # Import other modules with individual fallbacks
 try:
     from config_manager import ConfigManager
@@ -3511,16 +3523,52 @@ class PersistentMainWindow(QMainWindow):
                 username = login_dialog.get_username()
                 if not username:
                     continue
+                
+                # Show loading screen immediately after login success
+                # This prevents the UI from freezing/showing a blank screen
+                loading_screen = LoadingScreen()
+                loading_screen.show_with_fade()
+                QApplication.processEvents()
+                
+                loading_screen.update_status("Authenticating...", 10)
+                QApplication.processEvents()
+
                 # Set current user context for isolation
                 self.config_manager.set_current_user(username)
-                self.background_service.set_current_user(username)
+                
+                loading_screen.update_status("Loading user profile...", 20)
+                QApplication.processEvents()
+
                 # Update UI
                 self.user_label.setText(username)
+                
                 # Reload cameras for this user
                 self.camera_widgets.clear()
                 self.fullscreen_widgets.clear()
-                self.load_saved_cameras()
+                
+                # Pass loading screen to load_saved_cameras for progress updates
+                self.load_saved_cameras(loading_screen)
+                
+                # Start background service for user (triggers auto-start)
+                # MUST be called AFTER load_saved_cameras to avoid race condition
+                # where add_camera rewrites status to 'testing'
+                self.background_service.set_current_user(username)
+                
+                loading_screen.update_status("Finalizing setup...", 90)
+                QApplication.processEvents()
+                
                 self.update_status_indicator()
+                QApplication.processEvents()
+                
+                loading_screen.complete_loading()
+                QApplication.processEvents()
+                
+                # Allow fade out animation - yielded loop for smoothness
+                start_time = time.time()
+                while time.time() - start_time < 0.6:  # Slightly longer to ensure full fade
+                    QApplication.processEvents()
+                    time.sleep(0.01)  # Faster polling for better smoothness
+                
                 break
             else:
                 reply = QMessageBox.question(
@@ -3603,7 +3651,24 @@ class PersistentMainWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             camera_data = dialog.get_camera_data()
             if camera_data:
-                self.add_camera(camera_data)
+                # Persist camera to backend
+                try:
+                    # Map frontend keys to backend keys if needed, but config_manager.add_camera handles it
+                    # (it expects id, dict with name, source, type)
+                    backend_camera = self.config_manager.add_camera(camera_data['id'], camera_data)
+                    
+                    if backend_camera:
+                        print(f"✅ Camera persisted to backend: {backend_camera}")
+                        # Update ID if backend assigned a different one (e.g. integer ID vs UUID)
+                        if 'id' in backend_camera:
+                            camera_data['id'] = str(backend_camera['id'])
+                            
+                    self.add_camera(camera_data)
+                    
+                except Exception as e:
+                    print(f"⚠️ Failed to persist camera to backend: {e}")
+                    QMessageBox.warning(self, "Warning", f"Camera added locally but failed to save to backend: {e}")
+                    self.add_camera(camera_data)
     
     def show_fullscreen_camera(self, camera_id):
         """Show camera in fullscreen mode"""
@@ -3738,15 +3803,29 @@ class PersistentMainWindow(QMainWindow):
             print(f"❌ Error deleting camera: {e}")
             QMessageBox.critical(self, "Error", f"Error deleting camera: {str(e)}")
 
-    def load_saved_cameras(self):
+    def load_saved_cameras(self, loading_screen=None):
         """Load cameras from persistent storage"""
         print("🔄 Loading saved cameras...")
         
-        cameras = self.config_manager.load_cameras()
+        if loading_screen:
+            loading_screen.update_status("Reading camera configuration...", 35)
+            QApplication.processEvents()
         
-        for camera_id, camera_data in cameras.items():
+        # This API call can take time, yield before it
+        QApplication.processEvents()
+        cameras = self.config_manager.load_cameras()
+        QApplication.processEvents()
+        
+        total_cameras = len(cameras)
+        
+        for i, (camera_id, camera_data) in enumerate(cameras.items()):
             try:
                 print(f"🎥 Loading camera: {camera_data['name']}")
+                
+                if loading_screen:
+                    progress = 35 + int((i / total_cameras) * 40)  # 35% to 75%
+                    loading_screen.update_status(f"Loading camera: {camera_data['name']}...", progress)
+                    QApplication.processEvents()
                 
                 # Add camera to manager without testing (skip_test=True for instant loading)
                 # This allows the dashboard to appear immediately
@@ -3782,6 +3861,10 @@ class PersistentMainWindow(QMainWindow):
 
         self.update_camera_grid()
         self.update_status_indicator()
+        
+        if loading_screen:
+            loading_screen.update_status("Populating dashboard...", 75)
+            QApplication.processEvents()
         
         # ✅ UPDATE ALERTS WIDGET WITH CAMERA LIST
         try:
@@ -4384,6 +4467,7 @@ def main():
     
     app.setQuitOnLastWindowClosed(False)
 
+    # Show initial splash screen
     splash = SplashScreen()
     splash.show_with_progress()
     
@@ -4394,15 +4478,19 @@ def main():
         app.processEvents()
         time.sleep(0.1)
     
-    window = PersistentMainWindow()
-    
     splash.close()
     
+    # Initialize main window (quickly, without heavy loading)
+    window = PersistentMainWindow()
+    
+    # Show login screen first
     window.show_login_screen()
     
+    # Show window
     window.show()
 
-    window.start_camera_testing_in_background()
+    # Start camera testing will happen after login success
+    # window.start_camera_testing_in_background()
 
     sys.exit(app.exec_())
 
