@@ -144,6 +144,7 @@ class FireSmokeDetector(QObject):
                 print("Alert sent to mobile:", response.status_code)
             except Exception as e:
                 print("Failed to send alert to mobile:", e)
+    def set_nvr_mode(self, enabled):
         """Enable or disable NVR-only mode (optimizes for low-end devices)"""
         if enabled:
             print("🛑 Switching FireSmokeDetector to NVR Mode (unloading models)")

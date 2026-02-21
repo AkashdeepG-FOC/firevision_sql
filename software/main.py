@@ -56,12 +56,7 @@ except ImportError:
             self.device = device
             return self
 
-try:
-    from DeviceSettings import DeviceSettingsPage
-except ImportError:
-    print("Warning: DeviceSettings not available")
-    class DeviceSettingsPage(QWidget):
-        def __init__(self, *args, **kwargs): super().__init__()
+# Removed DeviceSettingsPage import
 
 # Import the Advanced Camera Management from separate file
 try:
@@ -124,33 +119,7 @@ except ImportError as e:
         def remove_camera(self, camera_id): pass
         def set_current_user(self, username): pass
 
-try:
-    from background_service import BackgroundService
-except ImportError as e:
-    print(f"Warning: Could not import BackgroundService: {e}")
-    class BackgroundService:
-        def __init__(self, config_manager=None): 
-            try:
-                self.stream_manager = StreamManager()
-                self.camera_manager = EnhancedCameraManager(config_manager=config_manager)
-                if config_manager and hasattr(self.stream_manager, 'set_config_manager'):
-                     self.stream_manager.set_config_manager(config_manager)
-            except Exception as e:
-                print(f"Warning: Error initializing background service managers: {e}")
-                pass
-        def start(self): pass
-        def stop(self): pass
-        def is_running(self): return True
-        def get_status(self): return {
-            'service_running': True,
-            'total_cameras': 0,
-            'running_cameras': 0,
-            'active_streams': 0,
-            'camera_details': [],
-            'stream_details': []
-        }
-        def add_camera_to_service(self, camera_id, camera_data): pass
-        def set_current_user(self, username): pass
+# BackgroundService removed
 
 try:
     from google_drive_manager import GoogleDriveManager
@@ -295,14 +264,7 @@ except ImportError:
     class AlertsWidget(QWidget):
         def __init__(self, alerts_manager): super().__init__()
 
-try:
-    from cloud_backup_manager import CloudBackupManager, CloudBackupWidget
-except ImportError:
-    class CloudBackupManager:
-        def __init__(self): pass
-    
-    class CloudBackupWidget(QWidget):
-        def __init__(self, cloud_backup_manager): super().__init__()
+# CloudBackupManager removed
 
 try:
     from user_managers import UserManager, UserManagementWidget
@@ -2031,22 +1993,71 @@ class CameraLoaderThread(QThread):
     camera_loaded = pyqtSignal(dict)
     camera_failed = pyqtSignal(str, str)  # camera_id, error message
 
-    def __init__(self, camera_data, background_service, parent=None):
+    def __init__(self, camera_data, camera_manager, parent=None):
         super().__init__(parent)
         self.camera_data = camera_data
-        self.background_service = background_service
+        self.camera_manager = camera_manager
 
     def run(self):
         try:
-            # Actually start the camera in the background
-            self.background_service.add_camera_to_service(self.camera_data['id'], self.camera_data)
+            # Actually start the camera directly in camera_manager
+            self.camera_manager.add_camera(
+                self.camera_data['id'],
+                self.camera_data['name'],
+                self.camera_data['source'],
+                self.camera_data['type'],
+                skip_test=True
+            )
+            self.camera_manager.start_camera(self.camera_data['id'])
             self.camera_loaded.emit(self.camera_data)
         except Exception as e:
             self.camera_failed.emit(self.camera_data['id'], str(e))
 
 
+class InitWorker(QThread):
+    """Worker thread for heavy initialization tasks to keep UI responsive and speed up startup"""
+    finished = pyqtSignal()
+    progress = pyqtSignal(int, str)
+
+    def __init__(self, main_window):
+        super().__init__()
+        self.window = main_window
+
+    def run(self):
+        try:
+            print("🚀 Background initialization started...")
+            
+            # 1. Load YOLO model (HEAVY)
+            self.progress.emit(30, "Loading AI models...")
+            try:
+                from ultralytics import YOLO
+                self.window.model = YOLO(resource_path('yolov8n.pt'))
+                print(f"✅ AI Model loaded. Device: {self.window.model.device}")
+            except Exception as e:
+                print(f"⚠️ Failed to load YOLO in background: {e}")
+
+            # Background initialization finished
+
+            # 3. Initialize Clip Manager
+            self.progress.emit(90, "Finalizing configuration...")
+            try:
+                self.window.clip_manager = EventClipManager()
+            except Exception as e:
+                print(f"⚠️ Failed to init ClipManager: {e}")
+            
+            self.progress.emit(100, "System Ready")
+            print("✅ Background initialization complete.")
+            self.finished.emit()
+        except Exception as e:
+            print(f"❌ Critical error in InitWorker: {e}")
+            import traceback
+            traceback.print_exc()
+            self.finished.emit()
+
+
 class PersistentMainWindow(QMainWindow):
     """Enhanced main window with fire/smoke detection integration"""
+    initialization_finished = pyqtSignal()
     
     def __init__(self):
         super().__init__()
@@ -2057,15 +2068,19 @@ class PersistentMainWindow(QMainWindow):
         
         # Initialize managers
         self.config_manager = ConfigManager()
-        self.background_service = BackgroundService(self.config_manager)
-        self.stream_manager = self.background_service.stream_manager
-        self.camera_manager = self.background_service.camera_manager
+        self.stream_manager = StreamManager()
+        self.camera_manager = EnhancedCameraManager(config_manager=self.config_manager)
+        if hasattr(self.stream_manager, 'set_config_manager'):
+            self.stream_manager.set_config_manager(self.config_manager)
+        self.background_service = None # Set to None to avoid breaking other references
         self.recording_manager = RecordingManager()
         self.google_drive_manager = GoogleDriveManager()
         
-        # --- Initialize YOLO model before UI setup ---
-        self.model = YOLO('yolov8n.pt')
-        print(f"[Detector] Model device: {self.model.device}")
+        # --- Background Initialization ---
+        self.model = None
+        self.init_worker = InitWorker(self)
+        self.init_worker.finished.connect(self._on_initialization_complete)
+        # We'll start the worker after UI setup is complete
         
         # Initialize map components BEFORE setup_ui
         self.camera_location_manager = CameraLocationManager(self.config_manager)
@@ -2090,10 +2105,8 @@ class PersistentMainWindow(QMainWindow):
         
         # --- Integrate new managers and widgets ---
         self.alerts_manager = AlertsManager()
-        self.cloud_backup_manager = CloudBackupManager()
         self.user_manager = UserManager()
         self.alerts_widget = AlertsWidget(self.alerts_manager)
-        self.cloud_backup_widget = CloudBackupWidget(self.cloud_backup_manager)
         self.user_management_widget = UserManagementWidget(self.user_manager)
         
         # Initialize voice command system
@@ -2113,16 +2126,13 @@ class PersistentMainWindow(QMainWindow):
 
         # Setup UI
         self.setup_ui()
-
+        
         # Connect signals
         self.connect_signals()
 
-        # Start background service
-        self.background_service.start()
+        # Start background initialization (DEFERRED)
+        self.init_worker.start()
 
-        # Initialize clip manager
-        self.clip_manager = EventClipManager()
-        
         # Test backend connection asynchronously (don't block UI)
         QTimer.singleShot(1000, self.test_backend_connection)
 
@@ -2195,6 +2205,12 @@ class PersistentMainWindow(QMainWindow):
         self.web_channel.registerObject('bridge', self.map_bridge)
         self.map_view.page().setWebChannel(self.web_channel)
 
+    def _on_initialization_complete(self):
+        """Called when background initialization is finished"""
+        print("🎉 All background systems initialized.")
+        self.initialization_finished.emit()
+
+
     def setup_system_tray(self):
         """Setup system tray for background operation"""
         if QSystemTrayIcon.isSystemTrayAvailable():
@@ -2208,9 +2224,6 @@ class PersistentMainWindow(QMainWindow):
             show_action = QAction("Show Fire Vision Pro", self)
             show_action.triggered.connect(self.show_from_tray)
             
-            status_action = QAction("Service Status", self)
-            status_action.triggered.connect(self.show_service_status)
-            
             # Voice command actions
             voice_start_action = QAction("🎤 Start Voice Commands", self)
             voice_start_action.triggered.connect(self.voice_manager.start_listening)
@@ -2222,7 +2235,6 @@ class PersistentMainWindow(QMainWindow):
             quit_action.triggered.connect(self.quit_application)
             
             tray_menu.addAction(show_action)
-            tray_menu.addAction(status_action)
             tray_menu.addSeparator()
             tray_menu.addAction(voice_start_action)
             tray_menu.addAction(voice_stop_action)
@@ -2245,9 +2257,7 @@ class PersistentMainWindow(QMainWindow):
 
     def show_from_tray(self):
         """Show window from system tray and require login"""
-        # Clear current user session to force re-login
         self.config_manager.set_current_user(None)
-        self.background_service.set_current_user("")
         
         # Clear UI camera widgets
         for widget in list(self.camera_widgets.values()):
@@ -2266,10 +2276,7 @@ class PersistentMainWindow(QMainWindow):
         self.raise_()
         self.activateWindow()
 
-    def show_service_status(self):
-        """Show service page"""
-        self.stacked_widget.setCurrentWidget(self.service_page)
-        self.set_active_nav_button(self.service_btn)
+    # Removed show_service_status
         
     def reload_configuration(self):
         """
@@ -2314,7 +2321,6 @@ class PersistentMainWindow(QMainWindow):
 
         if reply == QMessageBox.Yes:
             self.stop_all_cameras_and_clear_session()
-            self.background_service.stop()
             if self.tray_icon:
                 self.tray_icon.hide()
             QApplication.quit()
@@ -2334,8 +2340,7 @@ class PersistentMainWindow(QMainWindow):
             
             # Clear current user session to force re-login when reopened
             self.config_manager.set_current_user(None)
-            self.background_service.set_current_user("")
-            
+                
             # Clear UI camera widgets
             for widget in list(self.camera_widgets.values()):
                 widget.setParent(None)
@@ -2348,8 +2353,7 @@ class PersistentMainWindow(QMainWindow):
             self.update_camera_grid()
             
             # Update status
-            self.update_status_indicator()
-            
+                
             print("✅ All cameras stopped and session cleared")
             
         except Exception as e:
@@ -2705,14 +2709,12 @@ class PersistentMainWindow(QMainWindow):
         self.recordings_btn = create_nav_button("Recordings", "recordings")
         self.recordings_btn.clicked.connect(self.show_recordings_page)
 
-        self.service_btn = create_nav_button("Services", "services")
-        self.service_btn.clicked.connect(self.show_service_status)
+        # Service button removed
 
         self.alerts_btn = create_nav_button("Alerts", "alerts")
         self.alerts_btn.clicked.connect(self.show_alerts_page)
 
-        self.cloud_backup_btn = create_nav_button("Backup", "backup")
-        self.cloud_backup_btn.clicked.connect(self.show_cloud_backup_page)
+        # Backup button removed
 
         self.camera_manager_btn = create_nav_button("Camera manager", "camera_manager")
         self.camera_manager_btn.clicked.connect(self.show_camera_manager_page)
@@ -2720,8 +2722,7 @@ class PersistentMainWindow(QMainWindow):
         self.map_overview_btn = create_nav_button("Map overview", "map")
         self.map_overview_btn.clicked.connect(self.show_map_overview_page)
 
-        self.device_settings_btn = create_nav_button("Device settings", "device_manager")
-        self.device_settings_btn.clicked.connect(self.show_device_settings_page)
+        # Device settings button removed
 
         self.settings_btn = create_nav_button("Settings", "settings")
         self.settings_btn.clicked.connect(self.show_settings_page)
@@ -2732,12 +2733,9 @@ class PersistentMainWindow(QMainWindow):
         
         sidebar_layout.addWidget(self.cameras_btn)
         sidebar_layout.addWidget(self.recordings_btn)
-        sidebar_layout.addWidget(self.service_btn)
         sidebar_layout.addWidget(self.alerts_btn)
-        sidebar_layout.addWidget(self.cloud_backup_btn)
         sidebar_layout.addWidget(self.camera_manager_btn)
         sidebar_layout.addWidget(self.map_overview_btn)
-        sidebar_layout.addWidget(self.device_settings_btn)
         sidebar_layout.addWidget(self.settings_btn)
         
         sidebar_layout.addStretch()
@@ -2783,7 +2781,6 @@ class PersistentMainWindow(QMainWindow):
         """Hide window to system tray and clear user session"""
         # Clear current user session to force re-login when reopened
         self.config_manager.set_current_user(None)
-        self.background_service.set_current_user("")
         
         # Clear UI camera widgets
         for widget in list(self.camera_widgets.values()):
@@ -2814,10 +2811,7 @@ class PersistentMainWindow(QMainWindow):
         self.recordings_page = RecordingsPage(self.google_drive_manager)
         self.recordings_page.back_to_cameras.connect(self.show_cameras_page)
         self.stacked_widget.addWidget(self.recordings_page)
-        self.service_page = self.create_service_page()
-        self.stacked_widget.addWidget(self.service_page)
         self.stacked_widget.addWidget(self.alerts_widget)
-        self.stacked_widget.addWidget(self.cloud_backup_widget)
         self.stacked_widget.addWidget(self.user_management_widget)
         self.camera_manager_page = self.camera_location_manager
         self.stacked_widget.addWidget(self.camera_manager_page)
@@ -2876,9 +2870,6 @@ class PersistentMainWindow(QMainWindow):
         map_container_layout.addWidget(self.fire_alert_sidebox, alignment=Qt.AlignBottom | Qt.AlignRight)
         map_layout.addWidget(map_container, 1)
         self.stacked_widget.addWidget(self.map_overview_page)
-        # --- Device Settings Page ---
-        self.device_settings_page = DeviceSettingsPage(model=self.model, camera_manager=self.camera_manager)
-        self.stacked_widget.addWidget(self.device_settings_page)
         
         # --- Advanced Camera Management Page ---
         self.advanced_camera_page = AdvancedCameraManagementPage(self.camera_manager, self.config_manager)
@@ -2909,9 +2900,7 @@ class PersistentMainWindow(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.alerts_widget)
         self.set_active_nav_button(self.alerts_btn)
 
-    def show_cloud_backup_page(self):
-        self.stacked_widget.setCurrentWidget(self.cloud_backup_widget)
-        self.set_active_nav_button(self.cloud_backup_btn)
+    # Removed show_cloud_backup_page
 
     def show_users_page(self):
         self.stacked_widget.setCurrentWidget(self.user_management_widget)
@@ -3060,17 +3049,17 @@ class PersistentMainWindow(QMainWindow):
 
     def update_nav_buttons(self):
         """Update navigation button styles"""
-        for btn in [self.cameras_btn, self.recordings_btn, self.service_btn, self.alerts_btn, self.cloud_backup_btn, self.users_btn, self.camera_manager_btn, self.map_overview_btn, self.device_settings_btn, self.settings_btn]:
+        for btn in [self.cameras_btn, self.recordings_btn, self.alerts_btn, self.users_btn, self.camera_manager_btn, self.map_overview_btn, self.settings_btn]:
             btn.style().unpolish(btn)
             btn.style().polish(btn)
 
     def reset_all_nav_buttons(self):
         """Reset all navigation buttons to default state"""
         all_buttons = [
-            self.cameras_btn, self.recordings_btn, self.service_btn, 
-            self.alerts_btn, self.cloud_backup_btn, self.users_btn, 
+            self.cameras_btn, self.recordings_btn, 
+            self.alerts_btn, self.users_btn, 
             self.camera_manager_btn, self.map_overview_btn, 
-            self.device_settings_btn, self.settings_btn
+            self.settings_btn
         ]
         for btn in all_buttons:
             btn.setObjectName("navButton")
@@ -3141,7 +3130,6 @@ class PersistentMainWindow(QMainWindow):
         delete_cameras_btn.clicked.connect(self.show_delete_cameras_dialog)
 
         header_layout.addWidget(title)
-        header_layout.addWidget(self.status_indicator)
         header_layout.addStretch()
         header_layout.addWidget(add_camera_btn)
         header_layout.addWidget(delete_cameras_btn)
@@ -3166,335 +3154,7 @@ class PersistentMainWindow(QMainWindow):
 
         return page
 
-    def create_service_page(self):
-        """Create the service status page"""
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        # Header
-        header = QWidget()
-        header_layout = QHBoxLayout(header)
-
-        title = QLabel("Service Status & Management")
-        title.setObjectName("titleLabel")
-
-        refresh_btn = QPushButton("🔄 Refresh Status")
-        refresh_btn.setObjectName("addButton")
-        refresh_btn.clicked.connect(self.refresh_service_status)
-
-        header_layout.addWidget(title)
-        header_layout.addStretch()
-        header_layout.addWidget(refresh_btn)
-
-        layout.addWidget(header)
-
-        # Service Status Section
-        status_group = QGroupBox("Background Service Status")
-        status_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                color: white;
-                border: 2px solid #505050;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        status_layout = QVBoxLayout(status_group)
-
-        # Service running indicator
-        self.service_status_label = QLabel("🟢 Service Running")
-        self.service_status_label.setStyleSheet("""
-            QLabel {
-                color: #00ff00;
-                font-size: 16px;
-                font-weight: bold;
-                padding: 10px;
-                background-color: rgba(0, 255, 0, 20);
-                border-radius: 8px;
-                border: 1px solid #00ff00;
-            }
-        """)
-        status_layout.addWidget(self.service_status_label)
-
-        # Service statistics
-        self.service_stats_widget = QWidget()
-        stats_layout = QGridLayout(self.service_stats_widget)
-        stats_layout.setSpacing(15)
-
-        # Create stat labels
-        self.total_cameras_label = QLabel("Total Cameras: 0")
-        self.running_cameras_label = QLabel("Running Cameras: 0")
-        self.active_streams_label = QLabel("Active Streams: 0")
-        self.backend_status_label = QLabel("Backend Status: Unknown")
-
-        for label in [self.total_cameras_label, self.running_cameras_label, 
-                     self.active_streams_label, self.backend_status_label]:
-            label.setStyleSheet("""
-                QLabel {
-                    color: #bfc9e0;
-                    font-size: 14px;
-                    padding: 8px;
-                    background-color: #2d2d2d;
-                    border-radius: 6px;
-                    border: 1px solid #505050;
-                }
-            """)
-
-        stats_layout.addWidget(self.total_cameras_label, 0, 0)
-        stats_layout.addWidget(self.running_cameras_label, 0, 1)
-        stats_layout.addWidget(self.active_streams_label, 1, 0)
-        stats_layout.addWidget(self.backend_status_label, 1, 1)
-
-        status_layout.addWidget(self.service_stats_widget)
-        layout.addWidget(status_group)
-
-        # Camera Details Section
-        camera_group = QGroupBox("Camera Details")
-        camera_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                color: white;
-                border: 2px solid #505050;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        camera_layout = QVBoxLayout(camera_group)
-
-        self.camera_details_text = QTextEdit()
-        self.camera_details_text.setReadOnly(True)
-        self.camera_details_text.setMaximumHeight(150)
-        self.camera_details_text.setStyleSheet("""
-            QTextEdit {
-                background-color: #2d2d2d;
-                color: #bfc9e0;
-                border: 1px solid #505050;
-                border-radius: 6px;
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-            }
-        """)
-        camera_layout.addWidget(self.camera_details_text)
-        layout.addWidget(camera_group)
-
-        # Stream Details Section
-        stream_group = QGroupBox("Stream Details")
-        stream_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                color: white;
-                border: 2px solid #505050;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        stream_layout = QVBoxLayout(stream_group)
-
-        self.stream_details_text = QTextEdit()
-        self.stream_details_text.setReadOnly(True)
-        self.stream_details_text.setMaximumHeight(150)
-        self.stream_details_text.setStyleSheet("""
-            QTextEdit {
-                background-color: #2d2d2d;
-                color: #bfc9e0;
-                border: 1px solid #505050;
-                border-radius: 6px;
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-            }
-        """)
-        stream_layout.addWidget(self.stream_details_text)
-        layout.addWidget(stream_group)
-
-        # Service Control Section
-        control_group = QGroupBox("Service Control")
-        control_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                color: white;
-                border: 2px solid #505050;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        control_layout = QHBoxLayout(control_group)
-
-        start_service_btn = QPushButton("▶️ Start Service")
-        start_service_btn.setObjectName("addButton")
-        start_service_btn.clicked.connect(self.start_background_service)
-
-        stop_service_btn = QPushButton("⏹️ Stop Service")
-        stop_service_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ff3333;
-                color: white;
-                padding: 8px 16px;
-                font-weight: bold;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #cc0000;
-            }
-        """)
-        stop_service_btn.clicked.connect(self.stop_background_service)
-
-        test_backend_btn = QPushButton("🔗 Test Backend")
-        test_backend_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                padding: 8px 16px;
-                font-weight: bold;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
-        test_backend_btn.clicked.connect(self.test_backend_connection)
-
-        control_layout.addWidget(start_service_btn)
-        control_layout.addWidget(stop_service_btn)
-        control_layout.addWidget(test_backend_btn)
-        control_layout.addStretch()
-
-        layout.addWidget(control_group)
-        layout.addStretch()
-
-        # Initial status update
-        self.refresh_service_status()
-
-        return page
-
-    def refresh_service_status(self):
-        """Refresh the service status display"""
-        try:
-            status = self.background_service.get_status()
-            
-            # Update service status
-            if status['service_running']:
-                self.service_status_label.setText("🟢 Service Running")
-                self.service_status_label.setStyleSheet("""
-                    QLabel {
-                        color: #00ff00;
-                        font-size: 16px;
-                        font-weight: bold;
-                        padding: 10px;
-                        background-color: rgba(0, 255, 0, 20);
-                        border-radius: 8px;
-                        border: 1px solid #00ff00;
-                    }
-                """)
-            else:
-                self.service_status_label.setText("🔴 Service Stopped")
-                self.service_status_label.setStyleSheet("""
-                    QLabel {
-                        color: #ff3333;
-                        font-size: 16px;
-                        font-weight: bold;
-                        padding: 10px;
-                        background-color: rgba(255, 51, 51, 20);
-                        border-radius: 8px;
-                        border: 1px solid #ff3333;
-                    }
-                """)
-
-            # Update statistics
-            self.total_cameras_label.setText(f"Total Cameras: {status['total_cameras']}")
-            self.running_cameras_label.setText(f"Running Cameras: {status['running_cameras']}")
-            self.active_streams_label.setText(f"Active Streams: {status['active_streams']}")
-
-            # Update camera details
-            camera_details = "\n".join(status['camera_details']) if status['camera_details'] else "No cameras running"
-            self.camera_details_text.setText(camera_details)
-
-            # Update stream details
-            stream_details = "\n".join(status['stream_details']) if status['stream_details'] else "No active streams"
-            self.stream_details_text.setText(stream_details)
-
-            # Update backend status
-            if self.fire_detection_backend.test_connection():
-                self.backend_status_label.setText("Backend Status: ✅ Connected")
-                self.backend_status_label.setStyleSheet("""
-                    QLabel {
-                        color: #00ff00;
-                        font-size: 14px;
-                        padding: 8px;
-                        background-color: rgba(0, 255, 0, 20);
-                        border-radius: 6px;
-                        border: 1px solid #00ff00;
-                    }
-                """)
-            else:
-                self.backend_status_label.setText("Backend Status: ❌ Disconnected")
-                self.backend_status_label.setStyleSheet("""
-                    QLabel {
-                        color: #ff3333;
-                        font-size: 14px;
-                        padding: 8px;
-                        background-color: rgba(255, 51, 51, 20);
-                        border-radius: 6px;
-                        border: 1px solid #ff3333;
-                    }
-                """)
-
-        except Exception as e:
-            print(f"Error refreshing service status: {e}")
-
-    def start_background_service(self):
-        """Start the background service"""
-        try:
-            self.background_service.start()
-            self.refresh_service_status()
-            QMessageBox.information(self, "Service Started", "Background service has been started successfully!")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to start service: {str(e)}")
-
-    def stop_background_service(self):
-        """Stop the background service"""
-        try:
-            reply = QMessageBox.question(
-                self, 'Stop Service',
-                'Are you sure you want to stop the background service?\n\nThis will stop all cameras and streams.',
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-            
-            if reply == QMessageBox.Yes:
-                self.background_service.stop()
-                self.refresh_service_status()
-                QMessageBox.information(self, "Service Stopped", "Background service has been stopped.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to stop service: {str(e)}")
+    # Removed service page creation and management methods
 
     def connect_signals(self):
         """Connect UI signals"""
@@ -3549,15 +3209,10 @@ class PersistentMainWindow(QMainWindow):
                 # Pass loading screen to load_saved_cameras for progress updates
                 self.load_saved_cameras(loading_screen)
                 
-                # Start background service for user (triggers auto-start)
-                # MUST be called AFTER load_saved_cameras to avoid race condition
-                # where add_camera rewrites status to 'testing'
-                self.background_service.set_current_user(username)
+                # User context set
+                self.config_manager.set_current_user(username)
                 
                 loading_screen.update_status("Finalizing setup...", 90)
-                QApplication.processEvents()
-                
-                self.update_status_indicator()
                 QApplication.processEvents()
                 
                 loading_screen.complete_loading()
@@ -3582,35 +3237,7 @@ class PersistentMainWindow(QMainWindow):
                     QApplication.quit()
                     return
 
-    def update_status_indicator(self):
-        """Update the service status indicator"""
-        if self.background_service.is_running():
-            status = self.background_service.get_status()
-            self.status_indicator.setText(f"🟢 Service Running ({status['running_cameras']} cameras)")
-            self.status_indicator.setStyleSheet("""
-                QLabel {
-                    color: #00ff00;
-                    font-size: 12px;
-                    font-weight: bold;
-                    background-color: rgba(0, 255, 0, 20);
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    border: 1px solid #00ff00;
-                }
-            """)
-        else:
-            self.status_indicator.setText("🔴 Service Stopped")
-            self.status_indicator.setStyleSheet("""
-                QLabel {
-                    color: #ff3333;
-                    font-size: 12px;
-                    font-weight: bold;
-                    background-color: rgba(255, 51, 51, 20);
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    border: 1px solid #ff3333;
-                }
-            """)
+    # Removed update_status_indicator
 
     def logout(self):
         """Logout current user"""
@@ -3631,9 +3258,7 @@ class PersistentMainWindow(QMainWindow):
             
             if clear_reply == QMessageBox.Yes:
                 self.config_manager.save_login_details("", False)
-            # Clear current user context and stop user resources
             self.config_manager.set_current_user(None)
-            self.background_service.set_current_user("")
             # Clear UI camera widgets
             for widget in list(self.camera_widgets.values()):
                 widget.setParent(None)
@@ -3714,10 +3339,9 @@ class PersistentMainWindow(QMainWindow):
             skeleton = SkeletonCameraWidget()
             self.camera_widgets[camera_data['id']] = skeleton
             self.update_camera_grid()
-            self.update_status_indicator()
 
             # Start background thread to load camera
-            loader_thread = CameraLoaderThread(camera_data, self.background_service)
+            loader_thread = CameraLoaderThread(camera_data, self.camera_manager)
             loader_thread.camera_loaded.connect(self.on_camera_loaded)
             loader_thread.camera_failed.connect(self.on_camera_failed)
             loader_thread.start()
@@ -3746,7 +3370,6 @@ class PersistentMainWindow(QMainWindow):
         camera_widget.clicked.connect(self.show_fullscreen_camera)
         camera_widget.delete_clicked.connect(self.delete_camera)
         self.update_camera_grid()
-        self.update_status_indicator()
         QMessageBox.information(self, "Success", f"Camera '{camera_data['name']}' added successfully!")
 
     def on_camera_failed(self, camera_id, error_message):
@@ -3776,8 +3399,8 @@ class PersistentMainWindow(QMainWindow):
             if reply == QMessageBox.Yes:
                 print(f"🗑️ Deleting camera: {camera_id}")
                 
-                self.background_service.camera_manager.stop_camera(camera_id)
-                self.background_service.camera_manager.remove_camera(camera_id)
+                self.camera_manager.stop_camera(camera_id)
+                self.camera_manager.remove_camera(camera_id)
                 
                 self.config_manager.remove_camera(camera_id)
                 
@@ -3794,7 +3417,6 @@ class PersistentMainWindow(QMainWindow):
                     del self.fullscreen_widgets[camera_id]
                 
                 self.update_camera_grid()
-                self.update_status_indicator()
                 
                 QMessageBox.information(self, "Success", 
                     f'Camera "{camera_name}" deleted successfully!')
@@ -3860,7 +3482,6 @@ class PersistentMainWindow(QMainWindow):
                 print(f"❌ Error loading camera {camera_data.get('name', camera_id)}: {e}")
 
         self.update_camera_grid()
-        self.update_status_indicator()
         
         if loading_screen:
             loading_screen.update_status("Populating dashboard...", 75)
@@ -4229,32 +3850,22 @@ class PersistentMainWindow(QMainWindow):
             self.camera_widgets[camera_id].setText(f"Camera Error:\n{error}")
     
     def on_camera_tested(self, camera_id, success, message):
-        """Handle camera test completion from background testing
-        
-        Args:
-            camera_id: ID of the tested camera
-            success: Whether the test was successful
-            message: Test result message
-        """
+        """Handle camera test completion"""
         print(f"{'✅' if success else '❌'} Camera test result for {camera_id}: {message}")
         
         if camera_id in self.camera_widgets:
             if success:
-                # Update status to show camera is ready
                 self.camera_widgets[camera_id].set_status("Ready")
             else:
-                # Show error status
                 self.camera_widgets[camera_id].set_status(f"Error: {message}")
 
     def on_stream_started(self, camera_id):
         """Handle stream started"""
         print(f"🚀 Stream started for camera {camera_id}")
-        self.update_status_indicator()
 
     def on_stream_stopped(self, camera_id):
         """Handle stream stopped"""
         print(f"🛑 Stream stopped for camera {camera_id}")
-        self.update_status_indicator()
 
     def on_stream_error(self, camera_id, error):
         """Handle stream error"""
@@ -4470,27 +4081,38 @@ def main():
     # Show initial splash screen
     splash = SplashScreen()
     splash.show_with_progress()
-    
     app.processEvents()
     
-    start_time = time.time()
-    while time.time() - start_time < 5:
-        app.processEvents()
-        time.sleep(0.1)
-    
-    splash.close()
-    
-    # Initialize main window (quickly, without heavy loading)
+    # Initialize main window (now moves heavy tasks to background)
     window = PersistentMainWindow()
     
-    # Show login screen first
-    window.show_login_screen()
-    
-    # Show window
-    window.show()
+    # Define what happens when initialization is finished
+    def on_initialization_finished():
+        print("💡 Initialization finished, transitioning to login...")
+        splash.finish(window)
+        window.show_login_screen()
+        window.show()
 
-    # Start camera testing will happen after login success
-    # window.start_camera_testing_in_background()
+    # Link splash to background initialization progress
+    if hasattr(window, 'init_worker'):
+        # Stop the simulated timer and use real progress
+        if hasattr(splash, 'timer'):
+            splash.timer.stop()
+            
+        def update_splash(p, m):
+            splash.progress = p
+            splash.loading_text = m
+            splash.showMessage(
+                f"{m}\n\nLoading... {p}%",
+                Qt.AlignBottom | Qt.AlignCenter,
+                QColor(255, 255, 255)
+            )
+            app.processEvents()
+
+        window.init_worker.progress.connect(update_splash)
+
+    # Use the signal to trigger the transition
+    window.initialization_finished.connect(on_initialization_finished)
 
     sys.exit(app.exec_())
 
