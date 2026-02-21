@@ -382,6 +382,14 @@ class EnhancedCameraWidget(QLabel):
         self.timestamp_timer.timeout.connect(self.update_timestamp)
         self.timestamp_timer.start(1000)  # Update every second
 
+    def set_status(self, status):
+        """Update the status text on the widget"""
+        self.setText(f"📹 {self.camera_name}\n{status}")
+        # Also update the quality label with the status if it's brief
+        if len(status) < 15:
+            self.quality_label.setText(status)
+        self.quality_label.show()
+
     def update_timestamp(self):
         """Update the timestamp display"""
         current_time = datetime.datetime.now()

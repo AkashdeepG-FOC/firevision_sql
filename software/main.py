@@ -204,6 +204,10 @@ except ImportError as e:
         def update_detection_frame(self, frame): pass
         def update_fire_smoke_frame(self, frame, detections, alert_info): pass
         def set_detection_enabled(self, enabled): pass
+        def set_fire_smoke_detection_enabled(self, enabled): pass
+        def set_status(self, status): 
+            self.setText(f"{self.camera_name}\n{status}")
+        def update_camera_settings(self, iso=None, shutter=None, aperture=None, wb=None): pass
     
     class AddCameraDialog(QDialog):
         def __init__(self, parent=None): 
@@ -1262,70 +1266,14 @@ class ModernLoginDialog(QDialog):
             }
         """)
 
-        # Subtitle with login link
-        subtitle_widget = QWidget()
-        subtitle_layout = QHBoxLayout(subtitle_widget)
-        subtitle_layout.setContentsMargins(0, 0, 0, 0)
-        subtitle_layout.setSpacing(5)
-
-        subtitle_text = QLabel("Already have an account?")
-        subtitle_text.setStyleSheet("""
-            QLabel {
-                color: #9CA3AF;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
-
-        self.toggle_link = QPushButton("Log in")
-        self.toggle_link.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #8B5CF6;
-                border: none;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                text-decoration: underline;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                color: #A855F7;
-            }
-        """)
-        self.toggle_link.clicked.connect(self.toggle_mode)
-
-        subtitle_layout.addWidget(subtitle_text)
-        subtitle_layout.addWidget(self.toggle_link)
-        subtitle_layout.addStretch()
-
-        # Add title and subtitle to the form layout
+        # Add title to the form layout
         form_centerer_layout.addWidget(self.title_label)
-        form_centerer_layout.addWidget(subtitle_widget)
-
-        # First row - First name and Last name (only for signup)
-        self.name_row = QWidget()
-        name_layout = QHBoxLayout(self.name_row)
-        name_layout.setSpacing(12)
-        self.first_name_input = QLineEdit()
-        self.first_name_input.setPlaceholderText("Fletcher")
-        self.last_name_input = QLineEdit()
-        self.last_name_input.setPlaceholderText("Last name")
-        self.first_name_input.setMaximumWidth(170)
-        self.last_name_input.setMaximumWidth(170)
-        name_layout.addWidget(self.first_name_input)
-        name_layout.addWidget(self.last_name_input)
-
-        # Username field (for login mode)
+        # Username field
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Username")
-        self.username_input.hide()
         self.username_input.setMaximumWidth(360)
-        # Enable Enter key to move to password field
         self.username_input.returnPressed.connect(lambda: self.password_input.setFocus())
-        # Email field
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Email")
-        self.email_input.setMaximumWidth(360)
+
         # Password field
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
@@ -1387,52 +1335,11 @@ class ModernLoginDialog(QDialog):
                 color: #bfc9e0;
             }
         """
-        for field in [self.first_name_input, self.last_name_input, self.username_input, self.email_input, self.password_input]:
+        for field in [self.username_input, self.password_input]:
             field.setStyleSheet(input_style)
             field.setFixedHeight(40)
             field.setMaximumWidth(360)
 
-        # Terms checkbox (only for signup)
-        self.terms_widget = QWidget()
-        terms_layout = QHBoxLayout(self.terms_widget)
-        terms_layout.setContentsMargins(0, 0, 0, 0)
-        terms_layout.setSpacing(10)
-        
-        self.terms_checkbox = QCheckBox()
-        self.terms_checkbox.setStyleSheet("""
-            QCheckBox {
-                color: white;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #4B5563;
-                border-radius: 4px;
-                background-color: transparent;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #8B5CF6;
-                border-color: #8B5CF6;
-            }
-            QCheckBox::indicator:checked::after {
-                content: "✓";
-                color: white;
-                font-weight: bold;
-            }
-        """)
-        
-        terms_text = QLabel("I agree to the Terms & Conditions")
-        terms_text.setStyleSheet("""
-            QLabel {
-                color: #9CA3AF;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
-        
-        terms_layout.addWidget(self.terms_checkbox)
-        terms_layout.addWidget(terms_text)
-        terms_layout.addStretch()
         
         # Remember me checkbox (only for login)
         self.remember_widget = QWidget()
@@ -1495,79 +1402,11 @@ class ModernLoginDialog(QDialog):
         """)
         self.action_btn.clicked.connect(self.handle_action)
         
-        # Or register with section
-        or_widget = QWidget()
-        or_layout = QVBoxLayout(or_widget)
-        or_layout.setSpacing(15)
-        
-        or_label = QLabel("Or register with")
-        or_label.setAlignment(Qt.AlignCenter)
-        or_label.setStyleSheet("""
-            QLabel {
-                color: #9CA3AF;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
-        
-        # Social buttons
-        social_container = QWidget()
-        social_layout = QHBoxLayout(social_container)
-        social_layout.setSpacing(15)
-        
-        google_btn = QPushButton("Google")
-        google_btn.setFixedHeight(44)
-        google_btn.setMaximumWidth(170)
-        google_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #232136;
-                color: white;
-                border: 1px solid #4B5563;
-                border-radius: 8px;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                padding: 0px 20px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-                border-color: #6B7280;
-            }
-        """)
-        
-        apple_btn = QPushButton("Apple")
-        apple_btn.setFixedHeight(44)
-        apple_btn.setMaximumWidth(170)
-        apple_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #232136;
-                color: white;
-                border: 1px solid #4B5563;
-                border-radius: 8px;
-                font-size: 14px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                padding: 0px 20px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-                border-color: #6B7280;
-            }
-        """)
-        
-        social_layout.addWidget(google_btn)
-        social_layout.addWidget(apple_btn)
-        
-        or_layout.addWidget(or_label)
-        or_layout.addWidget(social_container)
-        
         # Add fields to form_centerer_layout
-        form_centerer_layout.addWidget(self.name_row)
         form_centerer_layout.addWidget(self.username_input)
-        form_centerer_layout.addWidget(self.email_input)
         form_centerer_layout.addWidget(password_container)
-        form_centerer_layout.addWidget(self.terms_widget)
         form_centerer_layout.addWidget(self.remember_widget)
         form_centerer_layout.addWidget(self.action_btn)
-        form_centerer_layout.addWidget(or_widget)
 
         # Add the centered form to the right_layout
         right_layout.addWidget(form_centerer, alignment=Qt.AlignHCenter)
@@ -1582,7 +1421,7 @@ class ModernLoginDialog(QDialog):
         self.loading_widget.hide()
         main_layout.addWidget(self.loading_widget)
 
-        self.toggle_mode(force_signup=False)
+        self.toggle_mode()
 
     def toggle_password_visibility(self):
         """Toggle password visibility"""
@@ -1593,35 +1432,15 @@ class ModernLoginDialog(QDialog):
             self.password_input.setEchoMode(QLineEdit.Password)
             self.show_password_btn.setText("👁")
 
-    def toggle_mode(self, force_signup=None):
-        if force_signup is not None:
-            self.is_signup_mode = bool(force_signup)
-        else:
-            self.is_signup_mode = not self.is_signup_mode
-        if self.is_signup_mode:
-            self.title_label.setText("Create an account")
-            self.action_btn.setText("Create account")
-            self.toggle_link.setText("Log in")
-            self.name_row.show()
-            self.email_input.show()
-            self.terms_widget.show()
-            self.username_input.hide()
-            self.remember_widget.hide()
-            self.first_name_input.clear()
-            self.last_name_input.clear()
-            self.email_input.clear()
-            self.password_input.clear()
-        else:
-            self.title_label.setText("Login to your account")
-            self.action_btn.setText("Login")
-            self.toggle_link.setText("Sign up")
-            self.name_row.hide()
-            self.email_input.hide()
-            self.terms_widget.hide()
-            self.username_input.show()
-            self.remember_widget.show()
-            self.password_input.clear()
-            self.load_saved_login()
+    def toggle_mode(self):
+        # Signup mode permanently disabled
+        self.is_signup_mode = False
+        self.title_label.setText("Login to your account")
+        self.action_btn.setText("Login")
+        self.username_input.show()
+        self.remember_widget.show()
+        self.password_input.clear()
+        self.load_saved_login()
 
     def load_saved_login(self):
         """Load saved login details if available"""
@@ -1638,10 +1457,8 @@ class ModernLoginDialog(QDialog):
 
     def handle_action(self):
         """Handle login or signup action"""
-        if self.is_signup_mode:
-            self.signup()
-        else:
-            self.login()
+        # Since signup is disabled, always call login
+        self.login()
 
     def login(self):
         """Handle user login with immediate authentication"""
@@ -1656,19 +1473,16 @@ class ModernLoginDialog(QDialog):
         self.process_authentication(username, password)
         
     def show_loading_animation(self):
-        """Show loading animation and hide form - kept for signup compatibility"""
+        """Show loading animation and hide form"""
         # Hide the form elements
-        self.name_row.hide()
         self.username_input.hide()
-        self.email_input.hide()
         self.password_input.hide()
-        self.terms_widget.hide()
         self.remember_widget.hide()
         self.action_btn.hide()
         
         # Show loading widget
         self.loading_widget.show()
-        self.loading_widget.set_loading_text("Creating account...")
+        self.loading_widget.set_loading_text("Logging in...")
         
     def process_authentication(self, username, password):
         """Process authentication immediately without backend calls"""
@@ -1701,51 +1515,14 @@ class ModernLoginDialog(QDialog):
         self.loading_widget.stop_animation()
         
         # Show the form elements again
-        if not self.is_signup_mode:
-            self.name_row.hide()  # Hide for login mode
-            self.username_input.show()
-            self.email_input.hide()  # Hide for login mode
-            self.password_input.show()
-            self.terms_widget.hide()  # Hide for login mode
-            self.remember_widget.show()
-            self.action_btn.show()
-        else:
-            self.name_row.show()  # Show for signup mode
-            self.username_input.hide()  # Hide for signup mode
-            self.email_input.show()
-            self.password_input.show()
-            self.terms_widget.show()  # Show for signup mode
-            self.remember_widget.hide()  # Hide for signup mode
-            self.action_btn.show()
+        self.username_input.show()
+        self.password_input.show()
+        self.remember_widget.show()
+        self.action_btn.show()
 
     def signup(self):
-        """Handle user signup with immediate processing"""
-        first_name = self.first_name_input.text().strip()
-        last_name = self.last_name_input.text().strip()
-        email = self.email_input.text().strip()
-        password = self.password_input.text()
-
-        if not first_name or not last_name or not email or not password:
-            QMessageBox.warning(self, "Error", "Please fill in all fields.")
-            return
-
-        if not self.terms_checkbox.isChecked():
-            QMessageBox.warning(self, "Error", "Please agree to the Terms & Conditions.")
-            return
-
-        # Create username from first name + last name
-        username = f"{first_name.lower()}{last_name.lower()}"
-        
-        # Process signup immediately
-        success = self.config_manager.create_user(username, password, email)
-        
-        if success:
-            QMessageBox.information(self, "Success", "Account created successfully! You can now login.")
-            self.toggle_mode()
-            self.username_input.setText(username)
-            self.password_input.setFocus()  # Focus on password field for quick login
-        else:
-            QMessageBox.warning(self, "Error", "Username already exists. Please try different names.")
+        """Handle user signup (DISABLED)"""
+        pass
 
     def get_username(self):
         """Get the logged in username"""
