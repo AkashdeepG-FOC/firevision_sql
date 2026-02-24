@@ -27,8 +27,8 @@ from PyQt5.QtGui import QPixmap, QImage, QFont, QColor, QIcon
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt5.QtCore import QSize, QUrl, QThread, pyqtSignal
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from enhanced_review_system import (PanicBehaviorDetector, EventClipManager, 
-                                 EventReviewWidget, PanicBehavior, EventClip)
+from enhanced_review_system import (EventClipManager, 
+                                 EventReviewWidget, EventClip)
 from notification_manager import NotificationManager
 
 # --- SAFE MODE FLAGS FOR DEBUGGING CRASH ---
@@ -1130,9 +1130,7 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.recording_filename = None
         
         # AI Review System components
-        self.panic_detector = PanicBehaviorDetector()
         self.review_widget = None
-        self.panic_behaviors = []
         self.active_event_recording = None
         
         # Detection system references
@@ -1141,7 +1139,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.camera_manager = None
         
         # Connect signals
-        self.panic_detector.panic_detected.connect(self.on_panic_detected)
         self.clip_manager.clip_created.connect(self.on_clip_created)
         
         if self.camera_manager:
@@ -1158,8 +1155,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.auto_record_timer.timeout.connect(self.on_auto_record_timeout)
         self.current_auto_recording_clip_id = None
         
-        # Enable panic detection by default
-        self.panic_detector.enable_detection(self.camera_id, True)
         
         # Clip playback variables
         self.clip_playback_cap = None
@@ -1288,7 +1283,7 @@ class EnhancedFullScreenCameraWidget(QWidget):
         
         # FV logo
         fv_logo = QLabel()
-        logo_pixmap = QPixmap(resource_path("assests/logo/fv_logo-removebg-preview.png"))
+        logo_pixmap = QPixmap(resource_path("assets/logo/fv_logo-removebg-preview.png")) # Fixed assets path typo
         if not logo_pixmap.isNull():
             fv_logo.setPixmap(logo_pixmap.scaled(60, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         fv_logo.setStyleSheet("background: transparent;")
@@ -1298,10 +1293,11 @@ class EnhancedFullScreenCameraWidget(QWidget):
         title_label.setStyleSheet("""
             QLabel {
                 color: white;
-                font-size: 13px;
+                font-family: 'Segoe UI', Arial;
+                font-size: 16px;
                 font-weight: bold;
-                background: transparent;
                 letter-spacing: 1px;
+                background: transparent;
             }
         """)
         
@@ -1309,75 +1305,46 @@ class EnhancedFullScreenCameraWidget(QWidget):
         top_row_layout.addWidget(title_label)
         top_row_layout.addStretch()
         
-        # Bottom row: Live Analysis status
-        bottom_row = QWidget()
-        bottom_row_layout = QHBoxLayout(bottom_row)
-        bottom_row_layout.setContentsMargins(0, 0, 0, 0)
-        
-        live_label = QLabel("Live Analysis:")
-        live_label.setStyleSheet("""
+        # Camera identifier
+        camera_label = QLabel(f"CAMERA: {self.camera_name.upper()}")
+        camera_label.setStyleSheet("""
             QLabel {
                 color: #888888;
+                font-family: 'Segoe UI', Arial;
                 font-size: 11px;
                 background: transparent;
             }
         """)
         
-        # Status indicators
-        status_widget = QWidget()
-        status_layout = QHBoxLayout(status_widget)
-        status_layout.setContentsMargins(0, 0, 0, 0)
-        status_layout.setSpacing(15)
-        
-        # Play/Pause indicator
-        play_indicator = QLabel("▶")
-        play_indicator.setStyleSheet("""
-            QLabel {
-                color: #00ff00;
-                font-size: 12px;
-                background: transparent;
-            }
-        """)
-        
-        # Forward indicator
-        forward_indicator = QLabel("▶")
-        forward_indicator.setStyleSheet("""
-            QLabel {
-                color: #00ff00;
-                font-size: 12px;
-                background: transparent;
-            }
-        """)
-        
-        status_layout.addWidget(play_indicator)
-        status_layout.addWidget(forward_indicator)
-        
-        bottom_row_layout.addWidget(live_label)
-        bottom_row_layout.addWidget(status_widget)
-        bottom_row_layout.addStretch()
-        
         header_layout.addWidget(top_row)
-        header_layout.addWidget(bottom_row)
+        header_layout.addWidget(camera_label)
         
-        # Tabs for different features
+        layout.addWidget(header)
+        
+        # Tab widget for different sections
         self.side_tabs = QTabWidget()
         self.side_tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #505050;
-                background-color: #1a1a1a;
+                border-top: 1px solid #333333;
+                background-color: #141414;
             }
             QTabBar::tab {
-                background-color: #3d3d3d;
-                color: white;
-                padding: 8px 12px;
-                margin-right: 2px;
+                background-color: #0a0a0a;
+                color: #888888;
+                padding: 12px 15px;
+                min-width: 80px;
+                border-bottom: 2px solid transparent;
                 font-size: 11px;
+                font-weight: bold;
             }
             QTabBar::tab:selected {
-                background-color: #ff3333;
+                background-color: #141414;
+                color: #ff3333;
+                border-bottom: 2px solid #ff3333;
             }
             QTabBar::tab:hover {
-                background-color: #505050;
+                background-color: #1a1a1a;
+                color: white;
             }
         """)
         
@@ -1385,30 +1352,27 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.live_analysis_tab = self.create_live_analysis_tab()
         self.side_tabs.addTab(self.live_analysis_tab, "📊 Live Analysis")
         
-        # Fire Detection Tab
-        self.fire_detection_widget = FireDetectionSidePanelWidget(self.camera_id, self.camera_name, self.fire_detection_backend, self.notification_manager)
+        # Fire Detection Management Tab
+        self.fire_detection_widget = FireDetectionSidePanelWidget(
+            self.camera_id, self.camera_name, self.fire_detection_backend, self.notification_manager
+        )
+        # Re-connect signals for fire management
         self.fire_detection_widget.dispatch_clicked.connect(self.on_dispatch_clicked)
         self.fire_detection_widget.false_alert_clicked.connect(self.on_false_alert_clicked)
         self.side_tabs.addTab(self.fire_detection_widget, "🔥 Fire Detection")
         
-        # Event Clips Tab
+        # Event Clips playback/management
         self.event_clips_tab = self.create_event_clips_tab()
         self.side_tabs.addTab(self.event_clips_tab, "🎬 Event Clips")
         
-        # Panic Detection Tab
-        self.panic_detection_tab = self.create_panic_detection_tab()
-        self.side_tabs.addTab(self.panic_detection_tab, "😰 Panic Detection")
+        # Timeline tab
+        self.timeline_tab = ThumbnailTimelineWidget(self.clip_manager, self.camera_id)
+        self.side_tabs.addTab(self.timeline_tab, "📅 Timeline")
         
-        # Timeline Tab
-        self.timeline_widget = ThumbnailTimelineWidget(self.clip_manager, self.camera_id)
-        self.timeline_widget.thumbnail_clicked.connect(self.on_thumbnail_clicked)
-        self.side_tabs.addTab(self.timeline_widget, "📹 Timeline")
-        
-        layout.addWidget(header)
         layout.addWidget(self.side_tabs)
         
         return panel
-        
+    
     def create_live_analysis_tab(self):
         """Create live analysis tab"""
         tab = QWidget()
@@ -1444,13 +1408,8 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.people_status = QLabel("👥 People: 0 detected")
         self.people_status.setStyleSheet("color: #00ff00; font-size: 11px;")
         
-        # Panic behavior status
-        self.panic_status = QLabel("😰 Panic Behaviors: None detected")
-        self.panic_status.setStyleSheet("color: #00ff00; font-size: 11px;")
-        
         detections_layout.addWidget(self.fire_smoke_status)
         detections_layout.addWidget(self.people_status)
-        detections_layout.addWidget(self.panic_status)
         
         # Auto-recording controls
         recording_group = QGroupBox("Auto Event Recording")
@@ -1547,7 +1506,7 @@ class EnhancedFullScreenCameraWidget(QWidget):
         type_layout.addWidget(QLabel("Type:"))
         self.event_filter_combo = QComboBox()
         self.event_filter_combo.addItems([
-            "All Events", "Fire Only", "Smoke Only", "Panic Only", "Combined"
+            "All Events", "Fire Only", "Smoke Only", "Combined"
         ])
         self.event_filter_combo.currentTextChanged.connect(self.filter_event_clips)
         self.event_filter_combo.setStyleSheet("font-size: 11px;")
@@ -1609,108 +1568,8 @@ class EnhancedFullScreenCameraWidget(QWidget):
         layout.addLayout(actions_layout)
         
         return tab
-    
-    def create_panic_detection_tab(self):
-        """Create panic detection configuration tab"""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(10)
-        
-        # Panic detection settings
-        settings_group = QGroupBox("Panic Detection Settings")
-        settings_group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                color: white;
-                border: 2px solid #505050;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
-                font-size: 12px;
-            }
-        """)
-        settings_layout = QVBoxLayout(settings_group)
-        
-        # Enable/disable panic detection
-        self.panic_detection_checkbox = QCheckBox("Enable Panic Behavior Detection")
-        self.panic_detection_checkbox.setChecked(True)
-        self.panic_detection_checkbox.setStyleSheet("color: white; font-size: 11px;")
-        self.panic_detection_checkbox.toggled.connect(self.toggle_panic_detection)
-        
-        # Sensitivity settings
-        sensitivity_layout = QHBoxLayout()
-        sensitivity_layout.addWidget(QLabel("Sensitivity:"))
-        self.sensitivity_slider = QSlider(Qt.Horizontal)
-        self.sensitivity_slider.setRange(1, 10)
-        self.sensitivity_slider.setValue(5)
-        self.sensitivity_value = QLabel("5")
-        self.sensitivity_value.setStyleSheet("color: white; font-size: 11px;")
-        sensitivity_layout.addWidget(self.sensitivity_slider)
-        sensitivity_layout.addWidget(self.sensitivity_value)
-        sensitivity_layout.addStretch()
-        
-        self.sensitivity_slider.valueChanged.connect(
-            lambda v: self.sensitivity_value.setText(str(v))
-        )
-        
-        # Behavior types to detect
-        behaviors_layout = QVBoxLayout()
-        behaviors_layout.addWidget(QLabel("Detect Behaviors:"))
-        
-        self.detect_running = QCheckBox("Running/Rapid Movement")
-        self.detect_running.setChecked(True)
-        self.detect_running.setStyleSheet("color: white; font-size: 11px;")
-        
-        self.detect_falling = QCheckBox("Falling")
-        self.detect_falling.setChecked(True)
-        self.detect_falling.setStyleSheet("color: white; font-size: 11px;")
-        
-        self.detect_erratic = QCheckBox("Erratic Movement")
-        self.detect_erratic.setChecked(True)
-        self.detect_erratic.setStyleSheet("color: white; font-size: 11px;")
-        
-        self.detect_crowd_panic = QCheckBox("Crowd Panic")
-        self.detect_crowd_panic.setChecked(True)
-        self.detect_crowd_panic.setStyleSheet("color: white; font-size: 11px;")
-        
-        behaviors_layout.addWidget(self.detect_running)
-        behaviors_layout.addWidget(self.detect_falling)
-        behaviors_layout.addWidget(self.detect_erratic)
-        behaviors_layout.addWidget(self.detect_crowd_panic)
-        
-        settings_layout.addWidget(self.panic_detection_checkbox)
-        settings_layout.addLayout(sensitivity_layout)
-        settings_layout.addLayout(behaviors_layout)
-        
-        # Recent panic behaviors
-        recent_group = QGroupBox("Recent Panic Behaviors")
-        recent_group.setStyleSheet(settings_group.styleSheet())
-        recent_layout = QVBoxLayout(recent_group)
-        
-        self.panic_behaviors_list = QListWidget()
-        self.panic_behaviors_list.setMaximumHeight(150)
-        self.panic_behaviors_list.setStyleSheet("""
-            QListWidget {
-                background-color: #1a1a1a;
-                border: 1px solid #505050;
-                color: white;
-                font-size: 10px;
-            }
-            QListWidget::item {
-                padding: 5px;
-                border-bottom: 1px solid #505050;
-            }
-        """)
-        
-        recent_layout.addWidget(self.panic_behaviors_list)
-        
-        layout.addWidget(settings_group)
-        layout.addWidget(recent_group)
-        layout.addStretch()
-        
-        return tab
-    
+
+
     def create_top_controls(self, layout):
         """Create top control bar with AI review toggle"""
         self.top_bar = QWidget()
@@ -1875,24 +1734,8 @@ class EnhancedFullScreenCameraWidget(QWidget):
         """)
         self.fire_smoke_alert_display.hide()
         
-        # Panic behavior alert display
-        self.panic_alert_display = QLabel("😰 PANIC DETECTED!")
-        self.panic_alert_display.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                font-size: 16px;
-                font-weight: bold;
-                background: rgba(255, 165, 0, 200);
-                padding: 8px 15px;
-                border: 3px solid #ffaa00;
-                border-radius: 8px;
-            }
-        """)
-        self.panic_alert_display.hide()
-        
         detection_displays_layout.addWidget(self.people_count_display)
         detection_displays_layout.addWidget(self.fire_smoke_alert_display)
-        detection_displays_layout.addWidget(self.panic_alert_display)
         
         status_layout.addWidget(top_status_widget)
         status_layout.addWidget(detection_displays_widget)
@@ -2640,89 +2483,13 @@ class EnhancedFullScreenCameraWidget(QWidget):
         except Exception:
             pass
 
-    def on_panic_detected(self, camera_id: str, panic_behavior: PanicBehavior):
-        """Handle panic behavior detection"""
-        if camera_id != self.camera_id:
-            return
-          
-        # Add to panic behaviors list
-        self.panic_behaviors.append(panic_behavior)
-      
-        # Update UI
-        self.update_panic_status()
-        self.add_panic_to_list(panic_behavior)
-        self.log_event(f"Panic behavior detected: {panic_behavior.behavior_type}")
-      
-        # Show panic alert
-        self.show_panic_alert(panic_behavior)
-      
-        # Start event recording if enabled
-        if self.auto_record_checkbox.isChecked():
-            self.start_event_recording('panic', {
-                'confidence': panic_behavior.confidence,
-                'severity': panic_behavior.severity,
-                'behavior_type': panic_behavior.behavior_type
-            })
-  
     def on_clip_created(self, clip: EventClip):
         """Handle new event clip creation"""
         if clip.camera_id == self.camera_id:
             self.log_event(f"Event clip created: {clip.event_type} ({clip.duration:.1f}s)")
             self.load_event_clips()
-            self.timeline_widget.load_thumbnails()
-  
-    def update_panic_status(self):
-        """Update panic detection status display"""
-        recent_behaviors = [
-            b for b in self.panic_behaviors 
-            if time.time() - b.timestamp < 30  # Last 30 seconds
-        ]
-      
-        if recent_behaviors:
-            behavior_types = set(b.behavior_type for b in recent_behaviors)
-            behavior_text = ", ".join(behavior_types)
-            self.panic_status.setText(f"😰 Panic Behaviors: {behavior_text}")
-            self.panic_status.setStyleSheet("color: #ff6666; font-size: 11px; font-weight: bold;")
-          
-            # Show panic alert display
-            self.panic_alert_display.show()
-        else:
-            self.panic_status.setText("😰 Panic Behaviors: None detected")
-            self.panic_status.setStyleSheet("color: #00ff00; font-size: 11px;")
-            self.panic_alert_display.hide()
-  
-    def show_panic_alert(self, panic_behavior: PanicBehavior):
-        """Show panic behavior alert"""
-        behavior_name = panic_behavior.behavior_type.replace('_', ' ').title()
-        self.panic_alert_display.setText(f"😰 {behavior_name.upper()}!")
-        self.panic_alert_display.show()
-      
-        # Auto-hide after 5 seconds
-        QTimer.singleShot(5000, self.panic_alert_display.hide)
-  
-    def add_panic_to_list(self, panic_behavior: PanicBehavior):
-        """Add panic behavior to the recent behaviors list"""
-        timestamp = datetime.datetime.fromtimestamp(panic_behavior.timestamp)
-        time_str = timestamp.strftime("%H:%M:%S")
-      
-        behavior_text = f"[{time_str}] {panic_behavior.behavior_type.replace('_', ' ').title()}"
-        behavior_text += f" (Confidence: {panic_behavior.confidence:.2f}, Severity: {panic_behavior.severity})"
-      
-        item = QListWidgetItem(behavior_text)
-      
-        # Color code by severity
-        if panic_behavior.severity == 'high':
-            item.setBackground(QColor(255, 100, 100, 100))
-        elif panic_behavior.severity == 'medium':
-            item.setBackground(QColor(255, 200, 100, 100))
-        else:
-            item.setBackground(QColor(200, 200, 200, 100))
-      
-        self.panic_behaviors_list.insertItem(0, item)
-      
-        # Keep only last 20 items
-        while self.panic_behaviors_list.count() > 20:
-            self.panic_behaviors_list.takeItem(self.panic_behaviors_list.count() - 1)
+            if hasattr(self, 'timeline_tab'):
+                self.timeline_tab.load_thumbnails()
   
     def log_event(self, message: str):
         """Add event to the event log"""
@@ -2784,7 +2551,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
             type_emoji = {
                 'fire': '🔥',
                 'smoke': '💨',
-                'panic': '😰',
                 'combined': '🚨'
             }.get(clip.event_type, '📹')
           
@@ -2809,7 +2575,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
             "All Events": None,
             "Fire Only": "fire",
             "Smoke Only": "smoke",
-            "Panic Only": "panic",
             "Combined": "combined"
         }
       
@@ -2828,7 +2593,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
             type_emoji = {
                 'fire': '🔥',
                 'smoke': '💨',
-                'panic': '😰',
                 'combined': '🚨'
             }.get(clip.event_type, '📹')
           
@@ -2882,11 +2646,6 @@ class EnhancedFullScreenCameraWidget(QWidget):
                 self.log_event(f"Deleted clip: {clip.event_type}")
                 print(f"🗑️ Deleting clip: {clip.file_path}")
                 self.load_event_clips()
-  
-    def toggle_panic_detection(self, enabled: bool):
-        """Toggle panic detection on/off"""
-        self.panic_detector.enable_detection(self.camera_id, enabled)
-        self.log_event(f"Panic detection {'enabled' if enabled else 'disabled'}")
   
     def update_fire_threshold(self, value):
         """Update fire detection threshold"""
@@ -3032,17 +2791,11 @@ class EnhancedFullScreenCameraWidget(QWidget):
                     playback_frame = self.frame_history[self.current_frame_index]
                     self.display_frame(playback_frame)
 
-            # Process with panic detector if people are detected
-            panic_behaviors = []
-            if self.people_detection_enabled and self.detections:
-                panic_behaviors = self.panic_detector.detect_panic_behaviors(
-                    self.camera_id, frame, self.detections
-                )
+            # Add frame to active event recording if any is in progress
 
             # Add frame to active event recording if any is in progress
             if self.auto_record_checkbox.isChecked() and self.current_auto_recording_clip_id:
                 detection_data = {
-                    'panic_behaviors': panic_behaviors,
                     'fire_detections': self.fire_smoke_detections,
                     'people_detections': self.detections
                 }

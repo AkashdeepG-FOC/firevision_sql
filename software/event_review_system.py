@@ -14,14 +14,6 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt5.QtGui import QPixmap, QImage, QFont, QMovie
 from PyQt5.QtCore import Qt
 
-@dataclass
-class PanicBehavior:
-    """Data class for panic behavior detection"""
-    behavior_type: str  # 'running', 'falling', 'crowd_panic', 'erratic_movement'
-    confidence: float
-    timestamp: float
-    bbox: Tuple[int, int, int, int]
-    severity: str  # 'low', 'medium', 'high'
 
 @dataclass
 class EventClip:
@@ -37,242 +29,12 @@ class EventClip:
     thumbnail_path: str
     fire_detections: List[Dict]
     smoke_detections: List[Dict]
-    panic_behaviors: List[PanicBehavior]
     max_confidence: float
     severity_level: str
     description: str
     reviewed: bool = False
     bookmarked: bool = False
 
-class PanicBehaviorDetector(QObject):
-    """AI system for detecting panic behaviors in video streams"""
-    
-    panic_detected = pyqtSignal(str, PanicBehavior)  # camera_id, panic_behavior
-    
-    def __init__(self):
-        super().__init__()
-        self.enabled_cameras = set()
-        self.behavior_history = {}  # camera_id -> list of recent behaviors
-        self.movement_trackers = {}  # camera_id -> movement tracking data
-        self.crowd_density_threshold = 5
-        self.movement_speed_threshold = 50  # pixels per frame
-        
-    def enable_detection(self, camera_id: str, enabled: bool = True):
-        """Enable/disable panic detection for a camera"""
-        if enabled:
-            self.enabled_cameras.add(camera_id)
-            self.behavior_history[camera_id] = []
-            self.movement_trackers[camera_id] = {
-                'previous_frame': None,
-                'optical_flow': None,
-                'person_tracks': {}
-            }
-        else:
-            self.enabled_cameras.discard(camera_id)
-            
-    def detect_panic_behaviors(self, camera_id: str, frame: np.ndarray, 
-                             people_detections: List[Dict]) -> List[PanicBehavior]:
-        """Detect panic behaviors in the current frame"""
-        if camera_id not in self.enabled_cameras:
-            return []
-            
-        behaviors = []
-        current_time = time.time()
-        
-        # Detect various panic behaviors
-        behaviors.extend(self._detect_erratic_movement(camera_id, frame, people_detections))
-        behaviors.extend(self._detect_crowd_panic(camera_id, frame, people_detections))
-        behaviors.extend(self._detect_running_behavior(camera_id, frame, people_detections))
-        behaviors.extend(self._detect_falling_behavior(camera_id, frame, people_detections))
-        
-        # Store in history and emit signals
-        for behavior in behaviors:
-            self.behavior_history[camera_id].append(behavior)
-            self.panic_detected.emit(camera_id, behavior)
-            
-        # Keep only recent history (last 30 seconds)
-        cutoff_time = current_time - 30
-        self.behavior_history[camera_id] = [
-            b for b in self.behavior_history[camera_id] 
-            if b.timestamp > cutoff_time
-        ]
-        
-        return behaviors
-    
-    def _detect_erratic_movement(self, camera_id: str, frame: np.ndarray, 
-                                people_detections: List[Dict]) -> List[PanicBehavior]:
-        """Detect erratic movement patterns"""
-        behaviors = []
-        tracker = self.movement_trackers[camera_id]
-        
-        if tracker['previous_frame'] is None:
-            tracker['previous_frame'] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            return behaviors
-            
-        # Calculate optical flow
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        flow = cv2.calcOpticalFlowPyrLK(
-            tracker['previous_frame'], gray, None, None
-        )[0] if len(people_detections) > 0 else None
-        
-        for detection in people_detections:
-            bbox = detection['bbox']
-            center = detection['center']
-            
-            # Analyze movement in person's bounding box
-            x1, y1, x2, y2 = bbox
-            roi_flow = flow[y1:y2, x1:x2] if flow is not None else None
-            
-            if roi_flow is not None and roi_flow.size > 0:
-                # Calculate movement metrics
-                movement_magnitude = np.mean(np.sqrt(
-                    roi_flow[:, :, 0]**2 + roi_flow[:, :, 1]**2
-                ))
-                movement_variance = np.var(np.sqrt(
-                    roi_flow[:, :, 0]**2 + roi_flow[:, :, 1]**2
-                ))
-                
-                # Detect erratic movement (high variance in movement)
-                if movement_variance > 20 and movement_magnitude > 10:
-                    confidence = min(0.95, movement_variance / 50)
-                    severity = 'high' if movement_variance > 40 else 'medium'
-                    
-                    behavior = PanicBehavior(
-                        behavior_type='erratic_movement',
-                        confidence=confidence,
-                        timestamp=time.time(),
-                        bbox=bbox,
-                        severity=severity
-                    )
-                    behaviors.append(behavior)
-        
-        tracker['previous_frame'] = gray
-        return behaviors
-    
-    def _detect_crowd_panic(self, camera_id: str, frame: np.ndarray, 
-                           people_detections: List[Dict]) -> List[PanicBehavior]:
-        """Detect crowd panic situations"""
-        behaviors = []
-        
-        if len(people_detections) < self.crowd_density_threshold:
-            return behaviors
-            
-        # Calculate crowd density and movement correlation
-        centers = [det['center'] for det in people_detections]
-        
-        # Check for synchronized rapid movement (crowd panic indicator)
-        if len(centers) >= 3:
-            # Calculate average movement direction
-            movements = []
-            for i in range(len(centers) - 1):
-                for j in range(i + 1, len(centers)):
-                    dx = centers[j][0] - centers[i][0]
-                    dy = centers[j][1] - centers[i][1]
-                    movements.append((dx, dy))
-            
-            if movements:
-                avg_dx = np.mean([m[0] for m in movements])
-                avg_dy = np.mean([m[1] for m in movements])
-                movement_coherence = np.std([m[0] for m in movements]) + np.std([m[1] for m in movements])
-                
-                # Low coherence (similar movement) + high density = potential crowd panic
-                if movement_coherence < 30 and len(people_detections) > 7:
-                    confidence = min(0.9, (len(people_detections) - 5) / 10)
-                    
-                    # Use the center of the crowd as bbox
-                    min_x = min(center[0] for center in centers) - 50
-                    min_y = min(center[1] for center in centers) - 50
-                    max_x = max(center[0] for center in centers) + 50
-                    max_y = max(center[1] for center in centers) + 50
-                    
-                    behavior = PanicBehavior(
-                        behavior_type='crowd_panic',
-                        confidence=confidence,
-                        timestamp=time.time(),
-                        bbox=(min_x, min_y, max_x, max_y),
-                        severity='high'
-                    )
-                    behaviors.append(behavior)
-        
-        return behaviors
-    
-    def _detect_running_behavior(self, camera_id: str, frame: np.ndarray, 
-                                people_detections: List[Dict]) -> List[PanicBehavior]:
-        """Detect running/rapid movement behavior"""
-        behaviors = []
-        tracker = self.movement_trackers[camera_id]
-        
-        for detection in people_detections:
-            # Use a more robust ID for tracking, e.g., from a proper tracker if available
-            # For now, a simple bbox-based ID
-            bbox_str = str(detection['bbox'])
-            current_center = detection['center']
-            current_time = time.time()
-            
-            if bbox_str in tracker['person_tracks']:
-                prev_data = tracker['person_tracks'][bbox_str]
-                prev_center = prev_data['center']
-                prev_time = prev_data['time']
-                
-                # Calculate speed
-                distance = np.sqrt(
-                    (current_center[0] - prev_center[0])**2 + 
-                    (current_center[1] - prev_center[1])**2
-                )
-                time_diff = current_time - prev_time
-                speed = distance / time_diff if time_diff > 0 else 0
-                
-                # Detect running (high speed movement)
-                if speed > self.movement_speed_threshold:
-                    confidence = min(0.9, speed / 100)
-                    severity = 'high' if speed > 80 else 'medium'
-                    
-                    behavior = PanicBehavior(
-                        behavior_type='running',
-                        confidence=confidence,
-                        timestamp=current_time,
-                        bbox=detection['bbox'],
-                        severity=severity
-                    )
-                    behaviors.append(behavior)
-            
-            # Update tracking
-            tracker['person_tracks'][bbox_str] = {
-                'center': current_center,
-                'time': current_time
-            }
-        
-        return behaviors
-    
-    def _detect_falling_behavior(self, camera_id: str, frame: np.ndarray, 
-                                people_detections: List[Dict]) -> List[PanicBehavior]:
-        """Detect falling behavior (aspect ratio analysis)"""
-        behaviors = []
-        
-        for detection in people_detections:
-            bbox = detection['bbox']
-            x1, y1, x2, y2 = bbox
-            width = x2 - x1
-            height = y2 - y1
-            
-            # Normal standing person has height > width
-            # Falling person has width > height or very low height
-            aspect_ratio = width / height if height > 0 else 0
-            
-            # Detect potential falling (unusual aspect ratio)
-            if aspect_ratio > 1.2 or height < 60:  # Person is wider than tall or very short
-                confidence = min(0.8, aspect_ratio / 2) if aspect_ratio > 1.2 else 0.7
-                
-                behavior = PanicBehavior(
-                    behavior_type='falling',
-                    confidence=confidence,
-                    timestamp=time.time(),
-                    bbox=bbox,
-                    severity='high'
-                )
-                behaviors.append(behavior)
-        
-        return behaviors
 
 class EventClipManager(QObject):
     """Manager for creating and managing event clips"""
@@ -322,7 +84,6 @@ class EventClipManager(QObject):
             thumbnail_path=os.path.join(self.thumbnails_directory, f"{clip_id}.jpg"),
             fire_detections=[],
             smoke_detections=[],
-            panic_behaviors=[],
             max_confidence=trigger_data.get('confidence', 0.0),
             severity_level=trigger_data.get('severity', 'medium'),
             description=f"{event_type.title()} event detected on {camera_name}"
@@ -378,9 +139,6 @@ class EventClipManager(QObject):
                 clip.fire_detections.extend(detections['fire_detections'])
             if 'smoke_detections' in detections:
                 clip.smoke_detections.extend(detections['smoke_detections'])
-            if 'panic_behaviors' in detections:
-                # Panic behaviors are already PanicBehavior objects, so no need to convert
-                clip.panic_behaviors.extend(detections['panic_behaviors'])
     
     def finish_recording(self, camera_id: str):
         """Finish and save event recording for a given camera_id"""
@@ -408,24 +166,17 @@ class EventClipManager(QObject):
         # Determine final event type based on detections
         has_fire = len(clip.fire_detections) > 0
         has_smoke = len(clip.smoke_detections) > 0
-        has_panic = len(clip.panic_behaviors) > 0
         
-        if has_fire and (has_smoke or has_panic):
+        if has_fire and has_smoke:
             clip.event_type = 'combined'
         elif has_fire:
             clip.event_type = 'fire'
-        elif has_smoke and has_panic:
-            clip.event_type = 'combined'
         elif has_smoke:
             clip.event_type = 'smoke'
-        elif has_panic:
-            clip.event_type = 'panic'
         
         # Calculate max confidence
-        all_confidences = []
         all_confidences.extend([d.get('confidence', 0) for d in clip.fire_detections])
         all_confidences.extend([d.get('confidence', 0) for d in clip.smoke_detections])
-        all_confidences.extend([b.confidence for b in clip.panic_behaviors])
         
         if all_confidences:
             clip.max_confidence = max(all_confidences)
@@ -485,8 +236,6 @@ class EventClipManager(QObject):
                 clips = [c for c in clips if c.event_type == 'fire']
             elif event_type == 'Smoke Only':
                 clips = [c for c in clips if c.event_type == 'smoke']
-            elif event_type == 'Panic Only':
-                clips = [c for c in clips if c.event_type == 'panic']
             elif event_type == 'Combined':
                 clips = [c for c in clips if c.event_type == 'combined']
         
@@ -541,10 +290,6 @@ class EventClipManager(QObject):
             serializable_clips = {}
             for clip_id, clip in self.clips_database.items():
                 clip_dict = asdict(clip)
-                # Convert PanicBehavior objects to dicts
-                clip_dict['panic_behaviors'] = [
-                    asdict(behavior) for behavior in clip.panic_behaviors
-                ]
                 serializable_clips[clip_id] = clip_dict
             
             with open(db_file, 'w') as f:
@@ -563,12 +308,6 @@ class EventClipManager(QObject):
                     data = json.load(f)
                 
                 for clip_id, clip_dict in data.items():
-                    # Convert panic behaviors back to objects
-                    panic_behaviors = [
-                        PanicBehavior(**behavior_dict) 
-                        for behavior_dict in clip_dict.get('panic_behaviors', [])
-                    ]
-                    clip_dict['panic_behaviors'] = panic_behaviors
                     
                     # Create EventClip object
                     clip = EventClip(**clip_dict)
@@ -650,7 +389,7 @@ class EventReviewWidget(QWidget):
         
         self.event_type_combo = QComboBox()
         self.event_type_combo.addItems([
-            "All Events", "Fire Only", "Smoke Only", "Panic Only", "Combined"
+            "All Events", "Fire Only", "Smoke Only", "Combined"
         ])
         self.event_type_combo.currentTextChanged.connect(self.filter_clips)
         

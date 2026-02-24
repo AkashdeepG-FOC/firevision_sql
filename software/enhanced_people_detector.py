@@ -13,7 +13,6 @@ class EnhancedPeopleDetector(QObject):
     
     detection_result = pyqtSignal(str, np.ndarray, list, int)
     line_crossing = pyqtSignal(str, str, int, int)
-    panic_behavior_detected = pyqtSignal(str, dict, float)  # camera_id, behavior_info, confidence
     event_clip_ready = pyqtSignal(str, str, dict)  # camera_id, clip_path, event_data
 
     def __init__(self):
@@ -26,28 +25,18 @@ class EnhancedPeopleDetector(QObject):
         self.count_history = {}
         self.smoothing_frames = 5
         
-        # Enhanced tracking for panic behavior
+        # Enhanced tracking
         self.tracked_objects = {}
         self.object_trajectories = {}  # Store movement patterns
-        self.panic_detection_enabled = {}
         self.behavior_history = {}  # Store behavior patterns
         
         # Event recording system
         self.event_buffers = {}  # Pre-event frame buffers
-        self.recording_events = {}  # Currently recording events
         self.event_clips_dir = "event_clips"
         self.buffer_duration = 5  # seconds before event
         self.clip_duration = 15  # total clip duration
         self.max_buffer_frames = 150  # 5 seconds at 30fps
         
-        # Panic behavior parameters
-        self.panic_thresholds = {
-            'rapid_movement': 50,  # pixels per frame
-            'erratic_movement': 0.3,  # direction change threshold
-            'crowd_density': 0.7,  # people per area ratio
-            'sudden_gathering': 5,  # people count increase
-            'running_speed': 80,  # pixels per frame for running
-        }
         
         # Line crossing detection
         self.counting_lines = {}
@@ -109,10 +98,6 @@ class EnhancedPeopleDetector(QObject):
                 
         print(f"🔍 Enhanced people detection {'enabled' if enabled else 'disabled'} for camera {camera_id}")
 
-    def enable_panic_detection(self, camera_id, enabled=True):
-        """Enable or disable panic behavior detection"""
-        self.panic_detection_enabled[camera_id] = enabled
-        print(f"🚨 Panic behavior detection {'enabled' if enabled else 'disabled'} for camera {camera_id}")
 
     def _initialize_camera_tracking(self, camera_id):
         """Initialize tracking structures for a camera"""
@@ -122,7 +107,6 @@ class EnhancedPeopleDetector(QObject):
             self.behavior_history[camera_id] = {}
             self.object_id_counter[camera_id] = 0
             self.event_buffers[camera_id] = deque(maxlen=self.max_buffer_frames)
-            self.recording_events[camera_id] = {}
         
         if camera_id not in self.frame_skip:
             self.frame_skip[camera_id] = 0
@@ -237,11 +221,6 @@ class EnhancedPeopleDetector(QObject):
                             count += 1
                             self._draw_enhanced_box(annotated_frame, x1, y1, x2, y2, confidence)
             
-            # Enhanced tracking and behavior analysis
-            if self.panic_detection_enabled.get(camera_id, False):
-                panic_info = self._analyze_panic_behavior(camera_id, detections, frame_copy)
-                if panic_info['panic_detected']:
-                    self._handle_panic_event(camera_id, panic_info, frame_copy)
             
             # Process line crossing if enabled
             if self.is_counting_line_enabled(camera_id):
@@ -265,231 +244,6 @@ class EnhancedPeopleDetector(QObject):
         except Exception as e:
             print(f"❌ Enhanced detection error for camera {camera_id}: {e}")
 
-    def _analyze_panic_behavior(self, camera_id, detections, frame):
-        """Analyze detections for panic behavior patterns"""
-        panic_info = {
-            'panic_detected': False,
-            'behaviors': [],
-            'confidence': 0.0,
-            'people_count': len(detections),
-            'timestamp': time.time()
-        }
-        
-        if len(detections) < 2:  # Need at least 2 people for crowd analysis
-            return panic_info
-        
-        # Analyze movement patterns
-        rapid_movements = 0
-        erratic_movements = 0
-        running_detected = 0
-        
-        for detection in detections:
-            center = detection['center']
-            detection_id = self._get_closest_tracked_object(camera_id, center)
-            
-            if detection_id and detection_id in self.object_trajectories[camera_id]:
-                trajectory = self.object_trajectories[camera_id][detection_id]
-                
-                if len(trajectory) >= 3:
-                    # Calculate movement speed
-                    recent_positions = trajectory[-3:]
-                    speeds = []
-                    for i in range(1, len(recent_positions)):
-                        dx = recent_positions[i][0] - recent_positions[i-1][0]
-                        dy = recent_positions[i][1] - recent_positions[i-1][1]
-                        speed = np.sqrt(dx*dx + dy*dy)
-                        speeds.append(speed)
-                    
-                    avg_speed = np.mean(speeds) if speeds else 0
-                    
-                    # Check for rapid movement (potential running)
-                    if avg_speed > self.panic_thresholds['running_speed']:
-                        running_detected += 1
-                        panic_info['behaviors'].append('running')
-                    elif avg_speed > self.panic_thresholds['rapid_movement']:
-                        rapid_movements += 1
-                        panic_info['behaviors'].append('rapid_movement')
-                    
-                    # Check for erratic movement (direction changes)
-                    if len(recent_positions) >= 3:
-                        directions = []
-                        for i in range(1, len(recent_positions)):
-                            dx = recent_positions[i][0] - recent_positions[i-1][0]
-                            dy = recent_positions[i][1] - recent_positions[i-1][1]
-                            if dx != 0 or dy != 0:
-                                angle = np.arctan2(dy, dx)
-                                directions.append(angle)
-                        
-                        if len(directions) >= 2:
-                            direction_changes = 0
-                            for i in range(1, len(directions)):
-                                angle_diff = abs(directions[i] - directions[i-1])
-                                if angle_diff > self.panic_thresholds['erratic_movement']:
-                                    direction_changes += 1
-                            
-                            if direction_changes >= 1:
-                                erratic_movements += 1
-                                panic_info['behaviors'].append('erratic_movement')
-        
-        # Analyze crowd density and sudden gathering
-        frame_area = frame.shape[0] * frame.shape[1]
-        people_area = sum([det['area'] for det in detections])
-        density = people_area / frame_area
-        
-        if density > self.panic_thresholds['crowd_density']:
-            panic_info['behaviors'].append('high_density')
-        
-        # Check for sudden increase in people count
-        if camera_id in self.count_history and len(self.count_history[camera_id]) > 0:
-            prev_count = self.count_history[camera_id][-1]
-            current_count = len(detections)
-            if current_count - prev_count >= self.panic_thresholds['sudden_gathering']:
-                panic_info['behaviors'].append('sudden_gathering')
-        
-        # Calculate overall panic confidence
-        behavior_weights = {
-            'running': 0.4,
-            'rapid_movement': 0.2,
-            'erratic_movement': 0.2,
-            'high_density': 0.1,
-            'sudden_gathering': 0.1
-        }
-        
-        confidence = 0.0
-        for behavior in panic_info['behaviors']:
-            if behavior in behavior_weights:
-                confidence += behavior_weights[behavior]
-        
-        # Additional factors
-        if running_detected >= 2:
-            confidence += 0.3  # Multiple people running
-        if rapid_movements >= 3:
-            confidence += 0.2  # Multiple rapid movements
-        
-        panic_info['confidence'] = min(confidence, 1.0)
-        panic_info['panic_detected'] = confidence > 0.5
-        
-        return panic_info
-
-    def _handle_panic_event(self, camera_id, panic_info, frame):
-        """Handle detected panic event and create event clip"""
-        print(f"🚨 Panic behavior detected on camera {camera_id}: {panic_info['behaviors']}")
-        
-        # Emit panic behavior signal
-        self.panic_behavior_detected.emit(camera_id, panic_info, panic_info['confidence'])
-        
-        # Start recording event clip if not already recording
-        event_id = f"panic_{int(time.time())}"
-        if event_id not in self.recording_events[camera_id]:
-            self._start_event_recording(camera_id, event_id, 'panic', panic_info)
-
-    def _start_event_recording(self, camera_id, event_id, event_type, event_info):
-        """Start recording an event clip"""
-        try:
-            # Create event data
-            event_data = {
-                'event_id': event_id,
-                'camera_id': camera_id,
-                'event_type': event_type,
-                'start_time': time.time(),
-                'info': event_info,
-                'frames': []
-            }
-            
-            # Add pre-event frames from buffer
-            if camera_id in self.event_buffers:
-                for buffered_frame in list(self.event_buffers[camera_id]):
-                    event_data['frames'].append(buffered_frame)
-            
-            self.recording_events[camera_id][event_id] = event_data
-            
-            # Schedule clip completion
-            clip_thread = threading.Thread(
-                target=self._complete_event_recording,
-                args=(camera_id, event_id)
-            )
-            clip_thread.daemon = True
-            clip_thread.start()
-            
-        except Exception as e:
-            print(f"❌ Error starting event recording: {e}")
-
-    def _complete_event_recording(self, camera_id, event_id):
-        """Complete event recording and save clip"""
-        try:
-            # Wait for clip duration
-            time.sleep(self.clip_duration - self.buffer_duration)
-            
-            if event_id not in self.recording_events[camera_id]:
-                return
-            
-            event_data = self.recording_events[camera_id][event_id]
-            
-            # Create video file
-            timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(event_data['start_time']))
-            clip_filename = f"{camera_id}_{event_data['event_type']}_{timestamp}.mp4"
-            clip_path = os.path.join(self.event_clips_dir, clip_filename)
-            
-            if event_data['frames']:
-                first_frame = event_data['frames'][0]['frame']
-                h, w = first_frame.shape[:2]
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                video_writer = cv2.VideoWriter(clip_path, fourcc, 30.0, (w, h))
-                
-                # Write frames with overlays
-                for frame_data in event_data['frames']:
-                    frame = frame_data['frame'].copy()
-                    
-                    # Add event overlay
-                    self._add_event_overlay(frame, event_data)
-                    
-                    video_writer.write(frame)
-                
-                video_writer.release()
-                
-                # Save event metadata
-                metadata_path = clip_path.replace('.mp4', '_metadata.json')
-                with open(metadata_path, 'w') as f:
-                    json.dump({
-                        'event_id': event_data['event_id'],
-                        'camera_id': event_data['camera_id'],
-                        'event_type': event_data['event_type'],
-                        'start_time': event_data['start_time'],
-                        'duration': self.clip_duration,
-                        'info': event_data['info']
-                    }, f, indent=2)
-                
-                print(f"✅ Event clip saved: {clip_path}")
-                
-                # Emit signal that clip is ready
-                self.event_clip_ready.emit(camera_id, clip_path, event_data)
-            
-            # Clean up
-            del self.recording_events[camera_id][event_id]
-            
-        except Exception as e:
-            print(f"❌ Error completing event recording: {e}")
-
-    def _add_event_overlay(self, frame, event_data):
-        """Add event information overlay to frame"""
-        try:
-            # Event type banner
-            cv2.rectangle(frame, (0, 0), (frame.shape[1], 60), (0, 0, 255), -1)
-            
-            event_text = f"🚨 {event_data['event_type'].upper()} EVENT DETECTED"
-            cv2.putText(frame, event_text, (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
-            
-            # Timestamp
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event_data['start_time']))
-            cv2.putText(frame, timestamp, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-            
-            # Event details
-            if 'behaviors' in event_data['info']:
-                behaviors_text = f"Behaviors: {', '.join(event_data['info']['behaviors'])}"
-                cv2.putText(frame, behaviors_text, (10, frame.shape[0] - 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-            
-        except Exception as e:
-            print(f"❌ Error adding event overlay: {e}")
 
     # Include other methods from original PeopleDetector
     def _get_closest_tracked_object(self, camera_id, center):
@@ -577,14 +331,6 @@ class EnhancedPeopleDetector(QObject):
         cv2.rectangle(frame, (x - 10, y - text_size[1] - 10), (x + text_size[0] + 10, y + 10), (0, 0, 0), -1)
         cv2.putText(frame, text, (x, y), font, font_scale, (0, 255, 0), thickness)
 
-        # Panic detection status
-        if self.panic_detection_enabled.get(camera_id, False):
-            panic_text = "🚨 Panic Detection: ON"
-            panic_size = cv2.getTextSize(panic_text, font, 0.5, 1)[0]
-            panic_x, panic_y = 20, h - 80
-            cv2.rectangle(frame, (panic_x - 5, panic_y - panic_size[1] - 5), 
-                         (panic_x + panic_size[0] + 5, panic_y + 5), (255, 0, 0), -1)
-            cv2.putText(frame, panic_text, (panic_x, panic_y), font, 0.5, (255, 255, 255), 1)
 
     # Include other necessary methods from original detector
     def is_counting_line_enabled(self, camera_id):
@@ -631,13 +377,6 @@ class EnhancedDetectionThread(QThread):
                 frame = self.detector.detection_queue[self.camera_id].pop(0)
                 self.detector._process_detection(self.camera_id, frame)
                 
-                # Continue recording event frames
-                for event_id, event_data in list(self.detector.recording_events[self.camera_id].items()):
-                    if len(event_data['frames']) < self.detector.clip_duration * 30:  # 30 fps
-                        event_data['frames'].append({
-                            'frame': frame.copy(),
-                            'timestamp': time.time()
-                        })
             
             time.sleep(0.01)
             
