@@ -75889,5 +75889,37 @@
     "description": "Panic event detected on Unknown Camera",
     "reviewed": false,
     "bookmarked": false
+  },
+  "5_1771914687": {
+    "clip_id": "5_1771914687",
+    "camera_id": "5",
+    "camera_name": "oooo",
+    "event_type": "panic",
+    "start_time": 1771914682.4171593,
+    "end_time": 1771914702.4528868,
+    "duration": 20.035727500915527,
+    "file_path": "event_clips\\5_1771914687.mp4",
+    "thumbnail_path": "event_thumbnails\\5_1771914687.jpg",
+    "fire_detections": [],
+    "smoke_detections": [],
+    "panic_behaviors": [
+      {
+        "behavior_type": "falling",
+        "confidence": 0.6799007444168734,
+        "timestamp": 1771914687.4137056,
+        "bbox": [
+          61,
+          76,
+          609,
+          479
+        ],
+        "severity": "high"
+      }
+    ],
+    "max_confidence": 0.6799007444168734,
+    "severity_level": "high",
+    "description": "Panic event detected on oooo",
+    "reviewed": false,
+    "bookmarked": false
   }
 }

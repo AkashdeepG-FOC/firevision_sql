@@ -989,5 +989,28 @@
     "acknowledged_at": null,
     "resolved_by": null,
     "resolved_at": null
+  },
+  {
+    "id": "people_5_1771914687",
+    "camera_id": "5",
+    "camera_name": "oooo",
+    "alert_type": "people",
+    "severity": "high",
+    "timestamp": 1771914687.3833387,
+    "confidence": 0.9482198357582092,
+    "description": "1 person(s) detected with 94.8% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-02-24T12:01:27.383338",
+      "people_count": 1,
+      "camera_location": "oooo",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null
   }
 ]

@@ -1077,14 +1077,15 @@ class EnhancedFullScreenCameraWidget(QWidget):
     
     back_clicked = pyqtSignal()
     
-    def __init__(self, camera_id, camera_name, clip_manager, fire_detection_backend=None, notification_manager=None, settings_manager=None):
+    def __init__(self, camera_id, camera_name, clip_manager, fire_detection_backend=None, notification_manager=None):
+
         super().__init__()
         self.camera_id = camera_id
         self.camera_name = camera_name
         self.clip_manager = clip_manager
         self.fire_detection_backend = fire_detection_backend
         self.notification_manager = notification_manager
-        self.settings_manager = settings_manager # Store settings manager
+
         self.is_playing = True
         self.is_recording = False
         self.zoom_level = 1.0
@@ -1143,13 +1144,13 @@ class EnhancedFullScreenCameraWidget(QWidget):
         self.panic_detector.panic_detected.connect(self.on_panic_detected)
         self.clip_manager.clip_created.connect(self.on_clip_created)
         
+        if self.camera_manager:
+            self.people_detection_enabled = self.camera_manager.is_people_detection_enabled(self.camera_id)
+            self.fire_smoke_detection_enabled = self.camera_manager.is_fire_smoke_detection_enabled(self.camera_id)
+        
         self.setup_ui()
         self._update_detection_button_states()
-        
-        if self.settings_manager:
-              self.settings_manager.settings_changed.connect(self.on_settings_changed)
-              # Initial load of settings
-              self.on_settings_changed()
+
         
         # Timer for auto-recording duration
         self.auto_record_timer = QTimer(self)
@@ -2378,47 +2379,69 @@ class EnhancedFullScreenCameraWidget(QWidget):
         """Start manual recording"""
         try:
             if not self.is_recording:
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                self.recording_filename = f"manual_recording_{self.camera_id}_{timestamp}.mp4"
-          
                 # Create recordings directory if it doesn't exist
                 recordings_dir = "recordings"
-                os.makedirs(recordings_dir, exist_ok=True)
-          
-                filepath = os.path.join(recordings_dir, self.recording_filename)
-          
-                # Initialize video writer (will be set up when first frame arrives)
+                if not os.path.exists(recordings_dir):
+                    os.makedirs(recordings_dir)
+                    
                 self.is_recording = True
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                self.recording_filename = f"manual_recording_{self.camera_id}_{timestamp}.mp4"
                 self.recording_start_time = time.time()
-          
+                
                 # Update UI
-                self.set_button_icon(self.record_btn, resource_path("assests/icons/stop.png"), "⏹")
+                self.set_button_icon(self.record_btn, resource_path("assests/icons/fullscreen_sidebar/record.png"), "⏹")
+                self.record_btn.setStyleSheet("background-color: #ff3333; border-radius: 4px;")
                 self.recording_indicator.show()
                 self.recording_time_label.show()
-          
-                # Start recording timer
-                self.recording_timer = QTimer()
-                self.recording_timer.timeout.connect(self.update_recording_time)
-                self.recording_timer.start(1000)  # Update every second
-          
-                self.log_event("Manual recording started")
-                print(f"🔴 Started recording: {filepath}")
-          
+                self.recording_time_label.setText("REC 00:00")
+                
+                # Start timer for UI update
+                if not hasattr(self, 'recording_timer'):
+                    self.recording_timer = QTimer()
+                    self.recording_timer.timeout.connect(self.update_recording_time)
+                self.recording_timer.start(1000)
+                
+                self.log_event(f"Manual recording started: {self.recording_filename}")
+                print(f"⏺ Started recording: {self.recording_filename}")
         except Exception as e:
             print(f"❌ Error starting recording: {e}")
+            self.is_recording = False
 
     def stop_recording(self):
         """Stop manual recording"""
         try:
             if self.is_recording:
                 self.is_recording = False
-          
+                
                 if self.video_writer:
                     self.video_writer.release()
                     self.video_writer = None
-          
+                
+                # Update UI
+                self.set_button_icon(self.record_btn, resource_path("assests/icons/fullscreen_sidebar/record.png"), "⏺")
+                self.record_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                        border-radius: 4px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                """)
+                self.recording_indicator.hide()
+                self.recording_time_label.hide()
+                
+                if hasattr(self, 'recording_timer'):
+                    self.recording_timer.stop()
+                
+                self.log_event("Manual recording stopped")
+                print(f"⏹ Stopped recording")
+                
         except Exception as e:
             print(f"❌ Error stopping recording: {e}")
+
 
     def update_recording_time(self):
         """Update recording time display"""
@@ -2526,6 +2549,17 @@ class EnhancedFullScreenCameraWidget(QWidget):
         except Exception as e:
             print(f"Error displaying frame: {e}")
             # Don't let display errors crash the application
+            pass
+
+    def __del__(self):
+        """Ensure recording is stopped on destruction"""
+        try:
+            if hasattr(self, 'is_recording') and self.is_recording:
+                self.stop_recording()
+            if hasattr(self, 'video_writer') and self.video_writer:
+                self.video_writer.release()
+                self.video_writer = None
+        except:
             pass
 
     def toggle_night_mode(self, enabled: bool):
@@ -3163,10 +3197,16 @@ class EnhancedFullScreenCameraWidget(QWidget):
                 # Initialize video writer if not done
                 if self.video_writer is None:
                     h, w = frame.shape[:2]
-                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    # Use H264 for better compatibility if available, or XVID
+                    fourcc = cv2.VideoWriter_fourcc(*'XVID')
                     recordings_dir = "recordings"
                     filepath = os.path.join(recordings_dir, self.recording_filename)
-                    self.video_writer = cv2.VideoWriter(filepath, fourcc, 30.0, (w, h))
+                    # Force .avi for XVID or .mp4 for mp4v
+                    if self.recording_filename.endswith('.mp4'):
+                        filepath = filepath.replace('.mp4', '.avi')
+                        self.recording_filename = self.recording_filename.replace('.mp4', '.avi')
+                        
+                    self.video_writer = cv2.VideoWriter(filepath, fourcc, 20.0, (w, h))
                 
                 # Write frame
                 if self.video_writer:
@@ -3277,21 +3317,8 @@ class EnhancedFullScreenCameraWidget(QWidget):
             self.display_frame(self.current_detection_frame)
 
     # ===== ESP32 Pump Control Helpers =====
-    def on_settings_changed(self):
-        """Handle settings changes"""
-        if not self.settings_manager:
-             return
-             
-        # Update ESP32 Connection
-        esp32_ip = self.settings_manager.get_setting("controller.esp32_ip", "")
-        is_connected = self.settings_manager.get_setting("controller.is_connected", False)
-        
-        if esp32_ip and is_connected:
-             self.set_esp32_base_url(f"http://{esp32_ip}")
-        else:
-             self.set_esp32_base_url(None) # Disable controls if not connected
-
     def set_esp32_base_url(self, base_url: str):
+
         """Set the base URL for ESP32 control, e.g., http://192.168.1.100"""
         try:
             self.esp32_base_url = base_url.strip() if base_url else None

@@ -221,7 +221,7 @@ try:
 except ImportError:
     class EnhancedFullScreenCameraWidget(QWidget):
         back_clicked = pyqtSignal()
-        def __init__(self, camera_id, camera_name, clip_manager=None, fire_detection_backend=None):
+        def __init__(self, camera_id, camera_name, clip_manager=None, fire_detection_backend=None, notification_manager=None):
             super().__init__()
             self.camera_id = camera_id
             self.camera_name = camera_name
@@ -229,6 +229,7 @@ except ImportError:
         def update_detection_frame(self, frame, detections, people_count): pass
         def update_fire_smoke_detection_frame(self, frame, detections, alert_info): pass
         def set_detection_systems(self, people_detector, fire_smoke_detector, camera_manager): pass
+
 
 try:
     from enhanced_review_system import EventClipManager
@@ -279,20 +280,8 @@ except ImportError:
     class UserManagementWidget(QWidget):
         def __init__(self, user_manager): super().__init__()
 
-try:
-    from settings_manager import SettingsManager
-    from settings_widget import SettingsWidget
-except ImportError:
-    print("Warning: Settings system not available")
-    class SettingsManager:
-        def __init__(self, *args, **kwargs): pass
-        def get_setting(self, key, default=None): return default
-        def set_setting(self, key, value): pass
-        def save_settings(self): pass
-    
-    class SettingsWidget(QWidget):
-        settings_applied = pyqtSignal()
-        def __init__(self, settings_manager, parent=None): super().__init__(parent)
+# Removed SettingsManager and SettingsWidget imports
+
 
 
 
@@ -1890,10 +1879,8 @@ class PersistentMainWindow(QMainWindow):
         self.voice_manager = VoiceCommandManager(self)
         self.voice_widget = VoiceCommandWidget(self.voice_manager)
         
-        # Initialize settings system
-        self.settings_manager = SettingsManager()
-        self.settings_widget = SettingsWidget(self.settings_manager, config_manager=self.config_manager)
-        self.settings_widget.settings_applied.connect(self.reload_configuration)
+        # Settings system removed
+
         
         # Setup system tray
         self.setup_system_tray()
@@ -1913,65 +1900,8 @@ class PersistentMainWindow(QMainWindow):
         # Test backend connection asynchronously (don't block UI)
         QTimer.singleShot(1000, self.test_backend_connection)
 
-        # --- Auto Mode Optimizer ---
-        # --- Auto Mode Optimizer & Manual NVR ---
-        auto_optimize = self.settings_manager.get_setting("system.auto_mode_optimizer", True)
-        manual_nvr = self.settings_manager.get_setting("system.nvr_mode_enabled", False)
-        
-        # 1. Manual NVR Mode (Highest Priority)
-        if manual_nvr:
-            print("🛑 Manual NVR-Only Mode is ENABLED. Disabling AI features on startup.")
-            def force_nvr_startup():
-                try:
-                    if hasattr(self.camera_manager, 'fire_smoke_detector'):
-                         self.camera_manager.fire_smoke_detector.set_nvr_mode(True)
-                except Exception as e:
-                    print(f"⚠️ Failed to enforce NVR mode on startup: {e}")
-            QTimer.singleShot(500, force_nvr_startup)
-            
-        # 2. Auto Optimizer (If manual mode is OFF)
-        elif profiler and auto_optimize:
-            # Run in background to avoid freezing startup
-            def run_optimization():
-                print("🚀 Running Auto Mode Optimizer...")
-                is_low_end, specs = profiler.profile_system()
-                self.settings_manager.set_setting("system.hardware_specs", specs)
-                
-                if is_low_end:
-                    # Respect user choice if they explicitly set Standard mode
-                    if self.settings_manager.get_setting("system.optimization_mode") == "Standard":
-                        print("⚠️ Low-end detected but User explicitly chose Standard mode. Respecting choice.")
-                        return
+        # Auto Mode Optimizer & Manual NVR removed (Settings dependent)
 
-                    current_nvr = self.settings_manager.get_setting("system.nvr_mode_enabled", False)
-                    if not current_nvr:
-                        print("⚠️ Low-end device detected! Switching to NVR-Only Mode.")
-                        self.settings_manager.set_setting("system.nvr_mode_enabled", True)
-                        self.settings_manager.set_setting("system.optimization_mode", "NVR")
-                        
-                        # Apply settings
-                        self.settings_manager.set_setting("fire_detection.model_selection", "Disabled (NVR Mode)")
-                        self.settings_manager.set_setting("camera.ai_processing_mode", "None")
-                        self.settings_manager.save_settings()
-                        
-                        # Unload AI models
-                        try:
-                            if hasattr(self.camera_manager, 'fire_smoke_detector'):
-                                self.camera_manager.fire_smoke_detector.set_nvr_mode(True)
-                        except Exception as e:
-                            print(f"⚠️ Failed to unload fire detector: {e}")
-                        
-                        # Notify user
-                        QMessageBox.information(
-                            self, 
-                            "Performance Optimization", 
-                            "Low-end hardware detected.\n\nSwitched to 'NVR-Only Mode' to ensure smooth performance.\nAI detections have been disabled.\n(You can disable this in Settings)"
-                        )
-                else:
-                    self.settings_manager.set_setting("system.optimization_mode", "Standard")
-                    self.settings_manager.save_settings()
-            
-            QTimer.singleShot(500, run_optimization)
 
         self._last_map_highlight = None
         self._last_map_camera_locations = None
@@ -2114,6 +2044,14 @@ class PersistentMainWindow(QMainWindow):
                     print(f"🛑 Stopped camera: {camera_id}")
                 except Exception as e:
                     print(f"❌ Error stopping camera {camera_id}: {e}")
+
+            # Stop any active recordings in fullscreen widgets
+            for widget in self.fullscreen_widgets.values():
+                try:
+                    if hasattr(widget, 'is_recording') and widget.is_recording:
+                        widget.stop_recording()
+                except Exception as e:
+                    print(f"❌ Error stopping recording on shutdown: {e}")
             
             # Clear current user session to force re-login when reopened
             self.config_manager.set_current_user(None)
@@ -2387,28 +2325,9 @@ class PersistentMainWindow(QMainWindow):
         logo_label.setAlignment(Qt.AlignCenter)
         logo_container_layout.addWidget(logo_label)
         
-        logo_layout.addWidget(logo_container, 1)
-        
-        # Settings icon in top right
-        settings_icon_btn = QPushButton()
-        settings_icon_pixmap = QPixmap(resource_path("assests/sidebar_icons/settings.png"))
-        if not settings_icon_pixmap.isNull():
-            settings_icon_btn.setIcon(QIcon(settings_icon_pixmap))
-            settings_icon_btn.setIconSize(QSize(22, 22))
-        settings_icon_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 4px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-                border-radius: 4px;
-            }
-        """)
-        settings_icon_btn.setFixedSize(30, 30)
-        settings_icon_btn.clicked.connect(self.show_settings_page)
-        logo_layout.addWidget(settings_icon_btn, alignment=Qt.AlignTop | Qt.AlignRight)
+        logo_layout.addWidget(logo_label)
+        logo_layout.addStretch()
+
         
         sidebar_layout.addWidget(logo_widget)
         
@@ -2499,10 +2418,8 @@ class PersistentMainWindow(QMainWindow):
         self.map_overview_btn = create_nav_button("Map overview", "map")
         self.map_overview_btn.clicked.connect(self.show_map_overview_page)
 
-        # Device settings button removed
 
-        self.settings_btn = create_nav_button("Settings", "settings")
-        self.settings_btn.clicked.connect(self.show_settings_page)
+
 
         # Create hidden users_btn placeholder to avoid errors in navigation methods
         self.users_btn = create_nav_button("Users", "user")
@@ -2513,7 +2430,7 @@ class PersistentMainWindow(QMainWindow):
         sidebar_layout.addWidget(self.alerts_btn)
         sidebar_layout.addWidget(self.camera_manager_btn)
         sidebar_layout.addWidget(self.map_overview_btn)
-        sidebar_layout.addWidget(self.settings_btn)
+
         
         sidebar_layout.addStretch()
         
@@ -2648,14 +2565,8 @@ class PersistentMainWindow(QMainWindow):
         map_layout.addWidget(map_container, 1)
         self.stacked_widget.addWidget(self.map_overview_page)
         
-        # --- Advanced Camera Management Page ---
-        self.advanced_camera_page = AdvancedCameraManagementPage(self.camera_manager, self.config_manager)
-        self.stacked_widget.addWidget(self.advanced_camera_page)
-        
-        # --- Settings Page ---
-        self.stacked_widget.addWidget(self.settings_widget)
-        
         dashboard_layout.addWidget(self.stacked_widget, 1)
+
 
     def _fire_alert_view_fullscreen(self):
         camera_id = getattr(self.fire_alert_btn, 'camera_id', None)
@@ -2670,8 +2581,11 @@ class PersistentMainWindow(QMainWindow):
 
     def show_recordings_page(self):
         """Show recordings page"""
+        if hasattr(self.recordings_page, 'refresh_recordings_list'):
+            self.recordings_page.refresh_recordings_list()
         self.stacked_widget.setCurrentWidget(self.recordings_page)
         self.set_active_nav_button(self.recordings_btn)
+
 
     def show_alerts_page(self):
         self.stacked_widget.setCurrentWidget(self.alerts_widget)
@@ -2826,18 +2740,19 @@ class PersistentMainWindow(QMainWindow):
 
     def update_nav_buttons(self):
         """Update navigation button styles"""
-        for btn in [self.cameras_btn, self.recordings_btn, self.alerts_btn, self.users_btn, self.camera_manager_btn, self.map_overview_btn, self.settings_btn]:
+        for btn in [self.cameras_btn, self.recordings_btn, self.alerts_btn, self.users_btn, self.camera_manager_btn, self.map_overview_btn]:
             btn.style().unpolish(btn)
             btn.style().polish(btn)
+
 
     def reset_all_nav_buttons(self):
         """Reset all navigation buttons to default state"""
         all_buttons = [
             self.cameras_btn, self.recordings_btn, 
             self.alerts_btn, self.users_btn, 
-            self.camera_manager_btn, self.map_overview_btn, 
-            self.settings_btn
+            self.camera_manager_btn, self.map_overview_btn
         ]
+
         for btn in all_buttons:
             btn.setObjectName("navButton")
             # Apply inactive styling
@@ -3036,6 +2951,15 @@ class PersistentMainWindow(QMainWindow):
             if clear_reply == QMessageBox.Yes:
                 self.config_manager.save_login_details("", False)
             self.config_manager.set_current_user(None)
+
+            # Stop any active recordings in fullscreen widgets before logout
+            for widget in self.fullscreen_widgets.values():
+                try:
+                    if hasattr(widget, 'is_recording') and widget.is_recording:
+                        widget.stop_recording()
+                except Exception as e:
+                    print(f"❌ Error stopping recording on logout: {e}")
+
             # Clear UI camera widgets
             for widget in list(self.camera_widgets.values()):
                 widget.setParent(None)
@@ -3088,9 +3012,9 @@ class PersistentMainWindow(QMainWindow):
                 camera_name, 
                 self.clip_manager, 
                 self.fire_detection_backend, 
-                self.notification_manager,
-                settings_manager=self.settings_manager
+                self.notification_manager
             )
+
             fullscreen_widget.set_detection_systems(
                 people_detector=self.camera_manager.people_detector,
                 fire_smoke_detector=self.camera_manager.fire_smoke_detector,
@@ -3105,6 +3029,11 @@ class PersistentMainWindow(QMainWindow):
     
     def return_to_grid(self):
         """Return to camera grid view"""
+        # Stop any active recordings in fullscreen widgets before returning
+        for widget in self.fullscreen_widgets.values():
+            if hasattr(widget, 'is_recording') and widget.is_recording:
+                widget.stop_recording()
+                
         self.stacked_widget.setCurrentWidget(self.cameras_page)
         self.sidebar.show()
 
@@ -3633,6 +3562,11 @@ class PersistentMainWindow(QMainWindow):
         if camera_id in self.camera_widgets:
             if success:
                 self.camera_widgets[camera_id].set_status("Ready")
+                # Automatically start the camera if test was successful
+                try:
+                    self.camera_manager.start_camera(camera_id)
+                except Exception as e:
+                    print(f"❌ Error starting camera after test: {e}")
             else:
                 self.camera_widgets[camera_id].set_status(f"Error: {message}")
 
@@ -3756,22 +3690,10 @@ class PersistentMainWindow(QMainWindow):
         print("Testing all cameras in the background...")
         pass
 
-    def show_device_settings_page(self):
-        self.stacked_widget.setCurrentWidget(self.device_settings_page)
-        self.set_active_nav_button(self.device_settings_btn)
-
-
-    def show_advanced_camera_page(self):
-        self.stacked_widget.setCurrentWidget(self.advanced_camera_page)
-        self.set_active_nav_button(self.advanced_camera_btn)
-
     def show_voice_commands_page(self):
         self.stacked_widget.setCurrentWidget(self.voice_widget)
         self.set_active_nav_button(self.voice_commands_btn)
 
-    def show_settings_page(self):
-        self.stacked_widget.setCurrentWidget(self.settings_widget)
-        self.set_active_nav_button(self.settings_btn)
 
 
 
