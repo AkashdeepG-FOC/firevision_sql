@@ -20,7 +20,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "people_5_1771919496",
@@ -43,7 +44,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "fire_5_1771919519",
@@ -65,7 +67,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "fire_5_1771919854",
@@ -87,7 +90,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "fire_5_1771920093",
@@ -109,7 +113,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "fire_5_1771920396",
@@ -131,7 +136,8 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
   },
   {
     "id": "fire_5_1771920458",
@@ -153,6 +159,168 @@
     "acknowledged_by": null,
     "acknowledged_at": null,
     "resolved_by": null,
-    "resolved_at": null
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781332",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "critical",
+    "timestamp": 1772781332.7064567,
+    "confidence": 0.90150210199418,
+    "description": "Fire detected with 90.2% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:45:32.706456",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781347",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "high",
+    "timestamp": 1772781347.6889129,
+    "confidence": 0.8059522559092814,
+    "description": "Fire detected with 80.6% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:45:47.688913",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781359",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772781359.8250113,
+    "confidence": 0.5174950164556503,
+    "description": "Fire detected with 51.7% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:45:59.825011",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781402",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772781402.6501098,
+    "confidence": 0.6458286996846706,
+    "description": "Fire detected with 64.6% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:46:42.650109",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781412",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772781412.6668713,
+    "confidence": 0.5697328810759839,
+    "description": "Fire detected with 57.0% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:46:52.666871",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_3_1772781451",
+    "camera_id": "3",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "high",
+    "timestamp": 1772781451.9793954,
+    "confidence": 0.8140574187748729,
+    "description": "Fire detected with 81.4% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-06T12:47:31.979395",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": null
+  },
+  {
+    "id": "fire_4_1772882251",
+    "camera_id": "4",
+    "camera_name": "camera_one",
+    "alert_type": "fire",
+    "severity": "high",
+    "timestamp": 1772882251.2601907,
+    "confidence": 0.7624510882190145,
+    "description": "Fire detected with 76.2% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-07T16:47:31.260190",
+      "camera_location": "camera_one",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 1
   }
 ]

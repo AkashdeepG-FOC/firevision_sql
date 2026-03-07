@@ -18,9 +18,7 @@ class User(Base):
     role = Column(String(50), default=UserRole.OPERATOR)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    cameras = relationship("Camera", back_populates="assigned_user")
-    login_logs = relationship("LoginLog", back_populates="user")
-    system_logs = relationship("SystemLog", back_populates="performer")
+    cameras = relationship("Camera", back_populates="assigned_user", cascade="all, delete-orphan")
 
 class Camera(Base):
     __tablename__ = "cameras"
@@ -34,7 +32,7 @@ class Camera(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     assigned_user = relationship("User", back_populates="cameras")
-    alerts = relationship("Alert", back_populates="camera")
+    alerts = relationship("Alert", back_populates="camera", cascade="all, delete-orphan")
 
 class AlertType(str, enum.Enum):
     FIRE = "fire"
@@ -45,42 +43,14 @@ class Alert(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     camera_id = Column(Integer, ForeignKey("cameras.id"))
-    alert_type = Column(String(50)) # fire, smoke
+    alert_type = Column(String(50)) # fire, smoke, etc.
+    severity = Column(String(50), default="low")
     confidence_score = Column(Float)
+    description = Column(String(255))
+    status = Column(String(50), default="active") # active, acknowledged, resolved, false_alarm
+    footage_path = Column(String(255), nullable=True)
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
+    acknowledged_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
 
     camera = relationship("Camera", back_populates="alerts")
-    media = relationship("Media", back_populates="alert", uselist=False)
-
-class Media(Base):
-    __tablename__ = "media"
-
-    id = Column(Integer, primary_key=True, index=True)
-    alert_id = Column(Integer, ForeignKey("alerts.id"))
-    image_path = Column(String(255))
-    video_path = Column(String(255))
-    stored_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    alert = relationship("Alert", back_populates="media")
-
-class LoginLog(Base):
-    __tablename__ = "login_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    login_time = Column(DateTime(timezone=True), server_default=func.now())
-    logout_time = Column(DateTime(timezone=True), nullable=True)
-    ip_address = Column(String(50))
-
-    user = relationship("User", back_populates="login_logs")
-
-class SystemLog(Base):
-    __tablename__ = "system_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    action_type = Column(String(100))
-    description = Column(String(255))
-    performed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    performer = relationship("User", back_populates="system_logs")

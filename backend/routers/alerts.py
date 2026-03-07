@@ -11,26 +11,39 @@ router = APIRouter()
 
 @router.post("/", response_model=schemas.Alert)
 def create_alert(alert: schemas.AlertCreate, db: Session = Depends(database.get_db)):
-    # Create Alert
+    # Create Alert with new fields
     db_alert = models.Alert(
         camera_id=alert.camera_id,
         alert_type=alert.alert_type,
-        confidence_score=alert.confidence_score
+        severity=alert.severity,
+        confidence_score=alert.confidence_score,
+        description=alert.description,
+        status=alert.status,
+        footage_path=alert.footage_path
     )
     db.add(db_alert)
     db.commit()
     db.refresh(db_alert)
     
-    # Create Media if paths provided
-    if alert.image_path or alert.video_path:
-        db_media = models.Media(
-            alert_id=db_alert.id,
-            image_path=alert.image_path,
-            video_path=alert.video_path
-        )
-        db.add(db_media)
-        db.commit()
-        
+    return db_alert
+
+@router.patch("/{alert_id}", response_model=schemas.Alert)
+def update_alert(
+    alert_id: int, 
+    alert_update: schemas.AlertUpdate, 
+    db: Session = Depends(database.get_db)
+):
+    db_alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
+    if not db_alert:
+        return {"error": "Alert not found"}
+    
+    # Update fields if provided
+    update_data = alert_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_alert, key, value)
+    
+    db.commit()
+    db.refresh(db_alert)
     return db_alert
 
 @router.get("/", response_model=List[schemas.Alert])
@@ -51,10 +64,4 @@ def read_alerts(
         
     alerts = query.order_by(models.Alert.detected_at.desc()).offset(skip).limit(limit).all()
     
-    # Enrich response with media paths (simplistic approach, cleaner would be to use JOINs or Pydantic relationships)
-    for alert in alerts:
-        if alert.media:
-            alert.image_path = alert.media.image_path
-            alert.video_path = alert.media.video_path
-            
     return alerts

@@ -1,0 +1,26 @@
+{
+  "camera_id": "3",
+  "timestamp": "2026-03-06T12:45:45.948530",
+  "alert_level": "WARNING",
+  "confidence_score": 0.8341296201117196,
+  "temporal_detections": 5,
+  "window_size": 5,
+  "detections": [
+    {
+      "bbox": [
+        6,
+        439,
+        97,
+        582
+      ],
+      "confidence": 0.6505487561225891,
+      "type": "fire",
+      "class_id": 0
+    }
+  ],
+  "is_night_mode": false,
+  "rules_applied": [
+    "bbox_size",
+    "movement_consistency"
+  ]
+}

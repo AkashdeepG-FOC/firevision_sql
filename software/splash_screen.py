@@ -78,9 +78,9 @@ class SplashScreen(QSplashScreen):
         font = QFont("Segoe UI", 54, QFont.Bold)
         painter.setFont(font)
         painter.setPen(QPen(QColor(255, 51, 51, 160), 4))
-        painter.drawText(QRect(0, 180, 1366, 100), Qt.AlignCenter, "FIRE VISION PRO")
+        painter.drawText(QRect(0, 180, 1366, 100), Qt.AlignCenter, "FIRE GUARD")
         painter.setPen(QPen(QColor(255, 255, 255), 2))
-        painter.drawText(QRect(0, 180, 1366, 100), Qt.AlignCenter, "FIRE VISION PRO")
+        painter.drawText(QRect(0, 180, 1366, 100), Qt.AlignCenter, "FIRE GUARD")
 
         # Step 5: Subtitle
         painter.setPen(QPen(QColor(200, 200, 200)))

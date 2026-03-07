@@ -28,3 +28,13 @@ def read_camera(camera_id: int, db: Session = Depends(database.get_db), current_
     if db_camera is None:
         raise HTTPException(status_code=404, detail="Camera not found")
     return db_camera
+
+@router.delete("/{camera_id}")
+def delete_camera(camera_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
+    db_camera = db.query(models.Camera).filter(models.Camera.id == camera_id).first()
+    if db_camera is None:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    
+    db.delete(db_camera)
+    db.commit()
+    return {"detail": "Camera deleted"}

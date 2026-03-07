@@ -52,5 +52,23 @@
     "name": "oooo",
     "source": "0",
     "type": "webcam"
+  },
+  {
+    "id": "2",
+    "name": "two",
+    "source": 0,
+    "type": "webcam"
+  },
+  {
+    "id": "4",
+    "name": "camera_one",
+    "source": "0",
+    "type": "webcam"
+  },
+  {
+    "id": "3",
+    "name": "Basement",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
   }
 ]

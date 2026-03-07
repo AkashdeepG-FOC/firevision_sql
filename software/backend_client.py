@@ -96,7 +96,7 @@ class BackendClient:
             
             payload = {
                 "camera_name": name,
-                "ip_address": ip_address,
+                "ip_address": str(ip_address) if ip_address is not None else "local_webcam",
                 "location": location,
                 "status": status,
                 "assigned_user_id": user_id
@@ -155,57 +155,62 @@ class BackendClient:
             print(f"Error deleting user: {e}")
             return False
 
-    # --- Logs ---
-    def create_log(self, action_type: str, description: str, performed_by: str = "system") -> bool:
-        try:
-            payload = {
-                "action_type": action_type,
-                "description": description,
-                "performed_by": performed_by
-            }
-            response = requests.post(
-                f"{self.base_url}/api/logs/",
-                json=payload,
-                headers=self.get_headers()
-            )
-            return response.status_code == 200
-        except Exception as e:
-            print(f"Error creating log: {e}")
-            return False
-
-    def get_logs(self, limit: int = 100) -> List[Dict]:
-        try:
-            response = requests.get(
-                f"{self.base_url}/api/logs/?limit={limit}",
-                headers=self.get_headers()
-            )
-            if response.status_code == 200:
-                return response.json()
-            return []
-        except Exception as e:
-            print(f"Error getting logs: {e}")
-            return []
-
     # --- Alerts ---
     def create_alert(self, camera_id: int, alert_type: str, confidence: float, 
-                    image_path: str = None, video_path: str = None) -> Optional[Dict[str, Any]]:
+                    severity: str = "low", description: str = None,
+                    image_path: str = None, video_path: str = None,
+                    footage_path: str = None) -> Optional[Dict[str, Any]]:
         try:
             payload = {
                 "camera_id": camera_id,
                 "alert_type": alert_type,
                 "confidence_score": confidence,
+                "severity": severity,
+                "description": description,
                 "image_path": image_path,
-                "video_path": video_path
+                "video_path": video_path,
+                "footage_path": footage_path,
+                "status": "active"
             }
             response = requests.post(
                 f"{self.base_url}/api/alerts/",
                 json=payload,
                 headers=self.get_headers()
             )
-            return response.json() if response.status_code == 200 else None
+            if response.status_code == 200:
+                return response.json()
+            print(f"❌ Create alert failed: {response.status_code} - {response.text}")
+            return None
         except Exception as e:
             print(f"Error creating alert: {e}")
             return None
+
+    def update_alert(self, alert_id: int, status: str = None, footage_path: str = None) -> bool:
+        """Update an alert's status or details on the backend"""
+        try:
+            payload = {}
+            if status:
+                payload["status"] = status
+                if status == "acknowledged":
+                    payload["acknowledged_at"] = datetime.now().isoformat()
+                elif status == "resolved":
+                    payload["resolved_at"] = datetime.now().isoformat()
+            
+            if footage_path:
+                payload["footage_path"] = footage_path
+
+            if not payload:
+                return True
+
+            response = requests.patch(
+                f"{self.base_url}/api/alerts/{alert_id}",
+                json=payload,
+                headers=self.get_headers()
+            )
+            return response.status_code == 200
+        except Exception as e:
+            print(f"Error updating alert: {e}")
+            return False
 
 # Singleton instance
 backend_client = BackendClient()

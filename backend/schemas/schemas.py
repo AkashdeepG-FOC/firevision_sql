@@ -70,12 +70,24 @@ class Camera(CameraBase):
 # Alert Schemas
 class AlertBase(BaseModel):
     camera_id: int
-    alert_type: AlertType
+    alert_type: str
+    severity: str = "low"
     confidence_score: float
+    description: Optional[str] = None
+    status: str = "active"
 
 class AlertCreate(AlertBase):
     image_path: Optional[str] = None
     video_path: Optional[str] = None
+    footage_path: Optional[str] = None
+
+class AlertUpdate(BaseModel):
+    status: Optional[str] = None
+    description: Optional[str] = None
+    severity: Optional[str] = None
+    footage_path: Optional[str] = None
+    acknowledged_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
 
 class Alert(AlertBase):
     id: int
@@ -86,33 +98,4 @@ class Alert(AlertBase):
     class Config:
         from_attributes = True
 
-# Log Schemas
-class LoginLogBase(BaseModel):
-    user_id: int
-    ip_address: str
-
-class LoginLogCreate(LoginLogBase):
-    pass
-
-class LoginLog(LoginLogBase):
-    id: int
-    login_time: datetime
-    logout_time: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-class SystemLogBase(BaseModel):
-    action_type: str
-    description: str
-    performed_by: Optional[int] = None
-
-class SystemLogCreate(SystemLogBase):
-    pass
-
-class SystemLog(SystemLogBase):
-    id: int
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
+# Log Schemas (Removed)

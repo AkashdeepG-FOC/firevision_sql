@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, users, cameras, alerts, logs
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+from .routers import auth, users, cameras, alerts
 from .core import database
 from .models import models
 
@@ -23,7 +26,22 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(cameras.router, prefix="/api/cameras", tags=["Cameras"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["Alerts"])
-app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
+
+# Static Files for Dashboard
+static_path = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.exists(static_path):
+    os.makedirs(static_path)
+
+dashboard_path = os.path.join(static_path, "dashboard")
+if not os.path.exists(dashboard_path):
+    os.makedirs(dashboard_path)
+
+app.mount("/dashboard", StaticFiles(directory=dashboard_path, html=True), name="dashboard")
+
+@app.get("/admin")
+@app.get("/admin/")
+async def serve_dashboard():
+    return FileResponse(os.path.join(dashboard_path, "index.html"))
 
 @app.get("/")
 def read_root():

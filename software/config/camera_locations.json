@@ -178,5 +178,14 @@
     "common": "IT",
     "description": "",
     "timestamp": 1771058195.4515498
+  },
+  "3": {
+    "camera_name": "Basement",
+    "latitude": 11.449611,
+    "longitude": 77.403889,
+    "floor": "Ground",
+    "common": "",
+    "description": "",
+    "timestamp": 1772781407.4179146
   }
 }

@@ -10,10 +10,12 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QTableWidget, QTableWidgetItem,
                              QComboBox, QDateEdit, QLineEdit, QHeaderView,
                              QDialog, QTextEdit, QCheckBox, QMessageBox,
-                             QProgressBar, QTabWidget, QScrollArea, QFrame)
+                             QProgressBar, QTabWidget, QScrollArea, QFrame,
+                             QMenu, QAction)
 from PyQt5.QtGui import QPixmap, QIcon, QColor
 from PyQt5.QtCore import Qt, QDate
 import sys
+from backend_client import backend_client
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -45,6 +47,7 @@ class Alert:
     acknowledged_at: Optional[float] = None
     resolved_by: Optional[str] = None
     resolved_at: Optional[float] = None
+    backend_id: Optional[int] = None
 
 class AlertsManager(QObject):
     """Manager for handling all types of alerts and detections"""
@@ -103,7 +106,8 @@ class AlertsManager(QObject):
                         acknowledged_by=data.get('acknowledged_by'),
                         acknowledged_at=data.get('acknowledged_at'),
                         resolved_by=data.get('resolved_by'),
-                        resolved_at=data.get('resolved_at')
+                        resolved_at=data.get('resolved_at'),
+                        backend_id=data.get('backend_id')
                     ))
                 print(f"✅ Loaded {len(self.alerts)} alerts")
             else:
@@ -154,6 +158,27 @@ class AlertsManager(QObject):
             # Save to file
             self.save_alerts_to_file()
             
+            # Sync to backend
+            try:
+                # Need integer camera ID for backend
+                # If camera_id is not an int, we might need a mapping or try to cast
+                b_camera_id = int(camera_id) if camera_id.isdigit() else 1 # Fallback to 1 if not digit
+                
+                backend_alert = backend_client.create_alert(
+                    camera_id=b_camera_id,
+                    alert_type=alert_type,
+                    confidence=confidence,
+                    severity=severity,
+                    description=description,
+                    footage_path=footage_path
+                )
+                if backend_alert and 'id' in backend_alert:
+                    alert.backend_id = backend_alert['id']
+                    self.save_alerts_to_file() # Save again with backend_id
+                    print(f"🔗 Alert synced to backend with ID: {alert.backend_id}")
+            except Exception as be:
+                print(f"⚠️ Failed to sync alert to backend: {be}")
+
             # Emit signal
             self.alert_created.emit(alert)
             
@@ -231,6 +256,10 @@ class AlertsManager(QObject):
             self.save_alert(alert)
             self.alert_updated.emit(alert)
             
+            # Sync to backend
+            if alert.backend_id:
+                backend_client.update_alert(alert.backend_id, status='acknowledged')
+            
             print(f"✅ Alert {alert_id} acknowledged by {user}")
             return True
             
@@ -251,6 +280,10 @@ class AlertsManager(QObject):
             
             self.save_alert(alert)
             self.alert_updated.emit(alert)
+            
+            # Sync to backend
+            if alert.backend_id:
+                backend_client.update_alert(alert.backend_id, status='resolved')
             
             print(f"✅ Alert {alert_id} resolved by {user}")
             return True
@@ -376,9 +409,9 @@ class AlertsWidget(QWidget):
         # Set dark theme for the entire widget with better contrast
         self.setStyleSheet("""
             QWidget {
-                background-color: #121212;
-                color: #e0e0e0;
-                font-family: 'Segoe UI', Arial, sans-serif;
+                background-color: #0d0d12;
+                color: #f0f0f5;
+                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
                 font-size: 13px;
             }
             QLabel {
@@ -395,36 +428,34 @@ class AlertsWidget(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_widget.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #333333;
-                background-color: #121212;
-                border-radius: 0px;
+                border: 1px solid #1f1f25;
+                background-color: #0d0d12;
+                border-radius: 8px;
                 margin-top: 10px;
-                border-top: none;
             }
             QTabBar::tab {
-                background-color: #1e1e1e;
-                color: #a0a0a0;
-                padding: 12px 24px;
-                margin-right: 4px;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
+                background-color: #1a1a1f;
+                color: #94a3b8;
+                padding: 10px 24px;
+                margin-right: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
                 font-weight: 600;
                 font-size: 13px;
-                border: 1px solid #333333;
+                border: 1px solid #1f1f25;
                 border-bottom: none;
             }
             QTabBar::tab:selected {
-                background-color: #E14A4A;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4b4b, stop:1 #e14a4a);
                 color: #ffffff;
-                border-color: #E14A4A;
+                border: 1px solid #ff4b4b;
             }
             QTabBar::tab:hover:!selected {
-                background-color: #2d2d2d;
-                color: #ffffff;
+                background-color: #25252b;
+                color: #f1f5f9;
             }
             QTabBar {
-                background-color: #121212;
-                border-bottom: 1px solid #333333;
+                background-color: transparent;
             }
         """)
         
@@ -444,66 +475,65 @@ class AlertsWidget(QWidget):
         header.setFixedHeight(120)
         header.setStyleSheet("""
             QWidget {
-                background-color: #1e1e1e;
-                border-radius: 0px;
-                border-bottom: 1px solid #333333;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1a1a1f, stop:1 #121217);
+                border-radius: 12px;
+                border: 1px solid #1f1f25;
             }
             QLabel {
-                color: #e0e0e0;
+                color: #f1f5f9;
                 font-weight: 600;
-                font-size: 13px;
             }
             QComboBox, QDateEdit {
-                background-color: #2d2d2d;
-                border: 1px solid #404040;
-                border-radius: 6px;
-                padding: 6px 12px;
-                color: #ffffff;
+                background-color: #0f172a;
+                border: 1px solid #1e293b;
+                border-radius: 8px;
+                padding: 8px 16px;
+                color: #f8fafc;
                 font-size: 13px;
                 font-weight: 500;
-                min-width: 120px;
+                min-width: 140px;
             }
             QComboBox:hover, QDateEdit:hover {
-                border-color: #E14A4A;
-                background-color: #363636;
+                border-color: #ef4444;
+                background-color: #1e293b;
             }
             QComboBox:focus, QDateEdit:focus {
-                border-color: #ff5f5f;
-                background-color: #363636;
+                border-color: #f87171;
+                background-color: #1e293b;
             }
             QComboBox::drop-down {
                 border: none;
-                width: 20px;
-                background: transparent;
+                width: 30px;
             }
             QComboBox::down-arrow {
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 5px solid #a0a0a0;
-                margin-right: 8px;
+                border-top: 5px solid #94a3b8;
+                margin-right: 12px;
             }
             QComboBox QAbstractItemView {
-                background-color: #2d2d2d;
-                border: 1px solid #404040;
-                color: #ffffff;
-                selection-background-color: #E14A4A;
+                background-color: #0f172a;
+                border: 1px solid #1e293b;
+                color: #f8fafc;
+                selection-background-color: #ef4444;
                 padding: 4px;
+                outline: none;
             }
             QPushButton {
-                background-color: #E14A4A;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4b4b, stop:1 #ef4444);
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
+                border-radius: 8px;
+                padding: 10px 20px;
                 color: #ffffff;
                 font-weight: bold;
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #ff5f5f;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff6b6b, stop:1 #f87171);
             }
             QPushButton:pressed {
-                background-color: #c03030;
+                background: #dc2626;
             }
         """)
         
@@ -517,11 +547,12 @@ class AlertsWidget(QWidget):
         title = QLabel("🚨 Alerts & Detections")
         title.setStyleSheet("""
             QLabel {
-                font-size: 20px;
-                font-weight: 700;
+                font-size: 22px;
+                font-weight: 800;
                 color: #ffffff;
                 background: transparent;
                 padding: 0px;
+                letter-spacing: 0.5px;
             }
         """)
         
@@ -669,61 +700,65 @@ class AlertsWidget(QWidget):
         self.alerts_table.setColumnWidth(3, 100)  # Severity
         self.alerts_table.setColumnWidth(5, 110)  # Status
         self.alerts_table.setColumnWidth(6, 90)   # Confidence
-        self.alerts_table.setColumnWidth(7, 140)  # Actions
-        self.alerts_table.setColumnWidth(8, 110)  # Footage
+        self.alerts_table.setColumnWidth(7, 150)  # Actions (Increased for clarity)
+        self.alerts_table.setColumnWidth(8, 150)  # Footage (Increased for clarity)
         
         # Modern table styling with better visibility
         self.alerts_table.setStyleSheet("""
             QTableWidget {
-                background-color: #121212;
-                color: #e0e0e0;
+                background-color: #0d0d12;
+                color: #f1f5f9;
                 border: none;
                 gridline-color: transparent;
-                selection-background-color: rgba(225, 74, 74, 0.15);
+                selection-background-color: rgba(239, 68, 68, 0.1);
                 selection-color: #ffffff;
                 font-size: 13px;
                 font-weight: 500;
                 outline: none;
             }
             QTableWidget::item {
-                padding: 8px 12px;
-                border-bottom: 1px solid #232323;
-                color: #e0e0e0;
+                padding: 12px 16px;
+                border-bottom: 1px solid #1f1f25;
+                color: #e2e8f0;
             }
             QTableWidget::item:selected {
-                background-color: rgba(225, 74, 74, 0.15);
+                background-color: rgba(239, 68, 68, 0.1);
                 color: #ffffff;
             }
             QTableWidget::item:hover {
-                background-color: #1a1a1a;
+                background-color: #1e1e26;
             }
             QHeaderView::section {
-                background-color: #121212;
-                color: #909090;
-                padding: 12px 12px;
+                background-color: #0a0a0f;
+                color: #64748b;
+                padding: 14px 16px;
                 border: none;
-                border-bottom: 1px solid #333333;
+                border-bottom: 2px solid #1f1f25;
                 font-weight: 700;
                 font-size: 11px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 1px;
             }
             QScrollBar:vertical {
-                background-color: #121212;
-                width: 10px;
+                background-color: #0d0d12;
+                width: 12px;
                 margin: 0px;
             }
             QScrollBar::handle:vertical {
-                background-color: #333333;
-                border-radius: 5px;
-                min-height: 20px;
-                margin: 2px;
+                background-color: #334155;
+                border-radius: 6px;
+                min-height: 30px;
+                margin: 3px;
             }
             QScrollBar::handle:vertical:hover {
-                background-color: #505050;
+                background-color: #475569;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
+            }
+            QTableCornerButton::section {
+                background-color: #0d0d12;
+                border: none;
             }
         """)
         
@@ -734,6 +769,7 @@ class AlertsWidget(QWidget):
         self.alerts_table.setHorizontalScrollMode(QTableWidget.ScrollPerPixel)
         self.alerts_table.setShowGrid(False)
         self.alerts_table.setFrameShape(QFrame.NoFrame)
+        self.alerts_table.verticalHeader().hide() # Remove row numbers for a cleaner look
         
         layout.addWidget(self.alerts_table)
         
@@ -792,11 +828,12 @@ class AlertsWidget(QWidget):
         breakdown_title.setStyleSheet("""
             QLabel {
                 font-size: 16px;
-                font-weight: 600;
+                font-weight: 700;
                 color: #ffffff;
-                padding-bottom: 10px;
+                padding-bottom: 12px;
                 background: transparent;
                 border: none;
+                letter-spacing: 0.5px;
             }
         """)
         breakdown_layout.addWidget(breakdown_title)
@@ -812,9 +849,9 @@ class AlertsWidget(QWidget):
         activity_widget = QWidget()
         activity_widget.setStyleSheet("""
             QWidget {
-                background-color: #1e1e1e;
-                border-radius: 8px;
-                border: 1px solid #333333;
+                background-color: #1a1a1f;
+                border-radius: 12px;
+                border: 1px solid #1f1f25;
             }
         """)
         activity_layout = QVBoxLayout(activity_widget)
@@ -824,11 +861,12 @@ class AlertsWidget(QWidget):
         activity_title.setStyleSheet("""
             QLabel {
                 font-size: 16px;
-                font-weight: 600;
+                font-weight: 700;
                 color: #ffffff;
-                padding-bottom: 10px;
+                padding-bottom: 12px;
                 background: transparent;
                 border: none;
+                letter-spacing: 0.5px;
             }
         """)
         activity_layout.addWidget(activity_title)
@@ -867,18 +905,18 @@ class AlertsWidget(QWidget):
         return widget
     
     def create_modern_stat_card(self, title: str, value: str, color: str, icon: str) -> QWidget:
-        """Create a modern statistics card"""
+        """Create a modern statistics card with premium aesthetics"""
         card = QWidget()
-        card.setFixedSize(220, 120)
+        card.setFixedSize(220, 130)
         card.setStyleSheet(f"""
             QWidget {{
-                background-color: #1e1e1e;
-                border-radius: 12px;
-                border: 1px solid #333333;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a1f, stop:1 #121217);
+                border-radius: 16px;
+                border: 1px solid #1f1f25;
             }}
             QWidget:hover {{
                 border: 1px solid {color};
-                background-color: #232323;
+                background-color: #1e1e26;
             }}
         """)
         
@@ -904,11 +942,11 @@ class AlertsWidget(QWidget):
         value_label.setStyleSheet(f"""
             QLabel {{
                 color: {color};
-                font-size: 28px;
-                font-weight: 700;
+                font-size: 32px;
+                font-weight: 800;
                 background: transparent;
                 border: none;
-                font-family: 'Segoe UI', Arial;
+                font-family: 'Inter', 'Segoe UI', Arial;
             }}
         """)
         
@@ -991,8 +1029,9 @@ class AlertsWidget(QWidget):
             print(f"❌ Error loading alerts: {e}")
     
     def update_alerts_table(self):
-        """Update the modern alerts table"""
+        """Update the modern alerts table with improved row visibility"""
         self.alerts_table.setRowCount(len(self.current_alerts))
+        self.alerts_table.verticalHeader().setDefaultSectionSize(60) # Taller rows
         
         for row, alert in enumerate(self.current_alerts):
             # Time
@@ -1011,12 +1050,9 @@ class AlertsWidget(QWidget):
             type_item.setToolTip(f"Alert Type: {alert.alert_type}")
             self.alerts_table.setItem(row, 2, type_item)
             
-            # Severity with color coding
-            severity_item = QTableWidgetItem(alert.severity.title())
-            severity_color = self.get_severity_color(alert.severity)
-            severity_item.setBackground(QColor(severity_color))
-            severity_item.setToolTip(f"Severity Level: {alert.severity}")
-            self.alerts_table.setItem(row, 3, severity_item)
+            # Severity badge
+            severity_widget = self.create_badge_widget(alert.severity.upper(), self.get_severity_color(alert.severity))
+            self.alerts_table.setCellWidget(row, 3, severity_widget)
             
             # Description (truncated for better display)
             description = alert.description
@@ -1026,13 +1062,10 @@ class AlertsWidget(QWidget):
             desc_item.setToolTip(alert.description)
             self.alerts_table.setItem(row, 4, desc_item)
             
-            # Status with color coding
-            status_display = alert.status.replace('_', ' ').title()
-            status_item = QTableWidgetItem(status_display)
-            status_color = self.get_status_color(alert.status)
-            status_item.setBackground(QColor(status_color))
-            status_item.setToolTip(f"Alert Status: {status_display}")
-            self.alerts_table.setItem(row, 5, status_item)
+            # Status badge
+            status_display = alert.status.replace('_', ' ').upper()
+            status_widget = self.create_badge_widget(status_display, self.get_status_color(alert.status))
+            self.alerts_table.setCellWidget(row, 5, status_widget)
             
             # Confidence with percentage
             confidence_text = f"{alert.confidence:.1%}"
@@ -1047,6 +1080,35 @@ class AlertsWidget(QWidget):
             # Footage with modern buttons
             footage_widget = self.create_footage_buttons(alert)
             self.alerts_table.setCellWidget(row, 8, footage_widget)
+
+    def create_badge_widget(self, text: str, color: str) -> QWidget:
+        """Create a pill-shaped badge for status or severity"""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignCenter)
+        
+        # Darken the background color for the badge but keep it vibrant
+        bg_color = QColor(color)
+        bg_style = f"rgba({bg_color.red()}, {bg_color.green()}, {bg_color.blue()}, 50)"
+        
+        label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {bg_style};
+                color: {color};
+                border: 1px solid {color};
+                border-radius: 12px;
+                padding: 4px 12px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.5px;
+            }}
+        """)
+        
+        layout.addWidget(label)
+        return widget
     
     def get_type_emoji(self, alert_type: str) -> str:
         """Get emoji for alert type"""
@@ -1080,63 +1142,83 @@ class AlertsWidget(QWidget):
         return color_map.get(status.lower(), '#6c757d')
     
     def create_action_buttons(self, alert) -> QWidget:
-        """Create modern action buttons for an alert"""
+        """Create a clean dropdown menu for alert actions"""
         widget = QWidget()
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(4, 4, 4, 4)
         
-        button_style = """
+        # Actions Dropdown Button
+        actions_btn = QPushButton("Actions ▾")
+        actions_btn.setStyleSheet("""
             QPushButton {
-                background-color: #505050;
-                border: 2px solid #707070;
+                background-color: #2d3748;
+                border: 1px solid #4a5568;
                 border-radius: 6px;
                 color: #ffffff;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 8px 12px;
-                min-width: 35px;
-                min-height: 25px;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 6px 12px;
+                min-width: 100px;
             }
             QPushButton:hover {
-                background-color: #606060;
-                border-color: #ff3333;
+                background-color: #3b4252;
+                border-color: #616e88;
+            }
+            QPushButton::menu-indicator {
+                image: none;
+            }
+        """)
+        
+        # Create the menu
+        menu = QMenu(actions_btn)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #1e293b;
+                border: 1px solid #334155;
+                border-radius: 8px;
+                color: #f1f5f9;
+                padding: 4px;
+            }
+            QMenu::item {
+                padding: 8px 24px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #3b82f6;
                 color: #ffffff;
             }
-            QPushButton:pressed {
-                background-color: #404040;
-                border-color: #ff3333;
+            QMenu::separator {
+                height: 1px;
+                background: #334155;
+                margin: 4px 8px;
             }
-        """
+        """)
         
         if alert.status == 'active':
-            # Acknowledge button
-            ack_btn = QPushButton("✓")
-            ack_btn.setStyleSheet(button_style)
-            ack_btn.setToolTip("Acknowledge Alert")
-            ack_btn.clicked.connect(lambda: self.acknowledge_alert(alert.id))
-            layout.addWidget(ack_btn)
+            # Acknowledge Action
+            ack_action = QAction("✓  Acknowledge", self)
+            ack_action.triggered.connect(lambda: self.acknowledge_alert(alert.id))
+            menu.addAction(ack_action)
             
-            # Resolve button
-            resolve_btn = QPushButton("✅")
-            resolve_btn.setStyleSheet(button_style)
-            resolve_btn.setToolTip("Resolve Alert")
-            resolve_btn.clicked.connect(lambda: self.resolve_alert(alert.id))
-            layout.addWidget(resolve_btn)
+            # Resolve Action
+            resolve_action = QAction("✅  Resolve", self)
+            resolve_action.triggered.connect(lambda: self.resolve_alert(alert.id))
+            menu.addAction(resolve_action)
             
-            # False alarm button
-            false_btn = QPushButton("❌")
-            false_btn.setStyleSheet(button_style)
-            false_btn.setToolTip("Mark as False Alarm")
-            false_btn.clicked.connect(lambda: self.mark_false_alarm(alert.id))
-            layout.addWidget(false_btn)
+            # False Alarm Action
+            false_action = QAction("❌  False Alarm", self)
+            false_action.triggered.connect(lambda: self.mark_false_alarm(alert.id))
+            menu.addAction(false_action)
+            
+            menu.addSeparator()
+            
+        # Delete Action (Red highlight)
+        delete_action = QAction("🗑️  Delete", self)
+        delete_action.triggered.connect(lambda: self.delete_alert(alert.id))
+        menu.addAction(delete_action)
         
-        # Delete button (always available)
-        delete_btn = QPushButton("🗑️")
-        delete_btn.setStyleSheet(button_style.replace("#404040", "#dc3545").replace("#606060", "#dc3545"))
-        delete_btn.setToolTip("Delete Alert")
-        delete_btn.clicked.connect(lambda: self.delete_alert(alert.id))
-        layout.addWidget(delete_btn)
+        actions_btn.setMenu(menu)
+        layout.addWidget(actions_btn)
         
         return widget
     
@@ -1149,24 +1231,21 @@ class AlertsWidget(QWidget):
         
         button_style = """
             QPushButton {
-                background-color: #505050;
-                border: 2px solid #707070;
-                border-radius: 6px;
+                background-color: #2d3748;
+                border: 1px solid #4a5568;
+                border-radius: 8px;
                 color: #ffffff;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 8px 12px;
-                min-width: 35px;
-                min-height: 25px;
+                font-size: 14px;
+                padding: 6px 10px;
+                min-width: 40px;
+                min-height: 32px;
             }
             QPushButton:hover {
-                background-color: #606060;
-                border-color: #ff3333;
-                color: #ffffff;
+                background-color: #4a5568;
+                border-color: #3b82f6;
             }
             QPushButton:pressed {
-                background-color: #404040;
-                border-color: #ff3333;
+                background-color: #1a202c;
             }
         """
         
@@ -1256,9 +1335,13 @@ class AlertsWidget(QWidget):
         card.setFixedSize(120, 80)
         card.setStyleSheet("""
             QWidget {
-                background-color: #404040;
-                border-radius: 8px;
-                border: 1px solid #606060;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a1f, stop:1 #121217);
+                border-radius: 12px;
+                border: 1px solid #1f1f25;
+            }
+            QWidget:hover {
+                background-color: #1e1e26;
+                border-color: #334155;
             }
         """)
         
@@ -1327,13 +1410,15 @@ class AlertsWidget(QWidget):
         item = QWidget()
         item.setStyleSheet("""
             QWidget {
-                background-color: #353535;
-                border-radius: 6px;
+                background-color: #1a1a1f;
+                border-radius: 8px;
                 margin: 2px;
-                padding: 5px;
+                padding: 8px;
+                border: 1px solid #1f1f25;
             }
             QWidget:hover {
-                background-color: #404040;
+                background-color: #1e1e26;
+                border-color: #334155;
             }
         """)
         
