@@ -1,0 +1,76 @@
+<mxfile host="65bd71144e">
+    <diagram id="FireVisionArch" name="FireVision Implementation">
+        <mxGraphModel dx="18590" dy="12826" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="FireVision — System Implementation Architecture" style="text;strokeColor=none;fillColor=none;html=1;fontSize=18;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="213.5" y="20" width="400" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;div style=&quot;background-color:#023e7d;color:white;padding:2px;&quot;&gt;User Interface&lt;/div&gt;&lt;br&gt;&lt;div style=&quot;background-color:#144a74;color:white;padding:2px;&quot;&gt;Processing Engine&lt;/div&gt;&lt;br&gt;→ Data / API call&lt;br&gt;--→ Streaming / Live Flow" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#faf3dd;strokeColor=#d6b656;fontSize=11;padding=5;" parent="1" vertex="1">
+                    <mxGeometry x="850" y="80" width="150" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="zone_client" value="Surveillance Software (Python / PyQt5)" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 8;fillColor=none;strokeColor=#d5e8d4;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=40;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="80" width="320" height="480" as="geometry"/>
+                </mxCell>
+                <mxCell id="sw_ui" value="&lt;b&gt;Main Dashboard UI&lt;/b&gt;&lt;br&gt;main.py / ui_components.py&lt;br&gt;Live Grids, Camera Controls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023e7d;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="120" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="sw_engine" value="&lt;b&gt;Detection Engine (YOLO)&lt;/b&gt;&lt;br&gt;detect.py&lt;br&gt;Real-time Inference&lt;br&gt;(Fire / Smoke)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#144a74;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="240" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="sw_client" value="&lt;b&gt;Backend Client&lt;/b&gt;&lt;br&gt;backend_client.py&lt;br&gt;REST Integration&lt;br&gt;Auth Token Storage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023e7d;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="380" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="zone_backend" value="Central Backend (FastAPI)" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 8;fillColor=none;strokeColor=#dae8fc;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=40;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="80" width="320" height="480" as="geometry"/>
+                </mxCell>
+                <mxCell id="api_routers" value="&lt;b&gt;API Routers&lt;/b&gt;&lt;br&gt;auth.py (JWT)&lt;br&gt;cameras.py (CRUD)&lt;br&gt;alerts.py (POST/GET)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023e7d;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="120" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="api_static" value="&lt;b&gt;Static Server&lt;/b&gt;&lt;br&gt;Serves Admin Dashboard&lt;br&gt;(/static/dashboard)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023e7d;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="240" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="api_database" value="&lt;b&gt;Core Database (MySQL)&lt;/b&gt;&lt;br&gt;models.py / database.py&lt;br&gt;Tables: Users, Cameras, Alerts" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="545" y="380" width="150" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="zone_web" value="Admin Dashboard (Browser)" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 8;fillColor=none;strokeColor=#fff2cc;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=40;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="620" width="700" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="web_login" value="&lt;b&gt;Login UI&lt;/b&gt;&lt;br&gt;index.html" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#023e7d;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="660" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="web_app" value="&lt;b&gt;Admin Manager&lt;/b&gt;&lt;br&gt;app.js / style.css&lt;br&gt;Real-time Monitoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#144a74;fontColor=#ffffff;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="660" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="flow_detect" value="Live Stream Feed" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#144a74;fontSize=9;dashed=1;" parent="1" source="sw_ui" target="sw_engine" edge="1"/>
+                <mxCell id="flow_alert" value="POST /api/alerts/" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#023e7d;fontSize=9;" parent="1" source="sw_engine" target="sw_client" edge="1"/>
+                <mxCell id="flow_sw_api" value="REST API Comm" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#023e7d;fontSize=10;strokeWidth=2;" parent="1" source="sw_client" target="api_routers" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="420"/>
+                            <mxPoint x="430" y="160"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="flow_db" value="SQL Queries" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#b85450;fontSize=9;" parent="1" source="api_routers" target="api_database" edge="1"/>
+                <mxCell id="flow_web_static" value="Load Static Files" style="endArrow=classic;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.15;entryY=1;entryDx=0;entryDy=0;strokeColor=#d6b656;fontSize=9;" parent="1" source="web_login" target="api_static" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="275" y="580"/>
+                            <mxPoint x="550" y="580"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="flow_web_api" value="Fetch Data (Alerts/Cameras)" style="endArrow=classic;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.85;entryY=1;entryDx=0;entryDy=0;strokeColor=#023e7d;fontSize=9;" parent="1" source="web_app" target="api_routers" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="550" y="600"/>
+                            <mxPoint x="690" y="600"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

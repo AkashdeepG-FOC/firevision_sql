@@ -2078,13 +2078,13 @@ class PersistentMainWindow(QMainWindow):
         """Apply dark theme to the application"""
         self.setStyleSheet("""
             QMainWindow, QWidget {
-                background-color: #1a1a1a;
+                background-color: #050505;
                 color: #ffffff;
                 font-family: Arial, sans-serif;
             }
             QPushButton {
                 background-color: #2d2d2d;
-                color: #ffffff; /* Ensure text/icon is visible */
+                color: #ffffff;
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
@@ -2092,44 +2092,38 @@ class PersistentMainWindow(QMainWindow):
             }
             QPushButton:hover {
                 background-color: #3d3d3d;
-                color: #ffffff; /* Ensure text/icon is visible on hover */
+                color: #ffffff;
             }
             QPushButton:pressed {
                 background-color: #505050;
-                color: #ffffff; /* Ensure text/icon is visible when pressed */
+                color: #ffffff;
             }
             QPushButton#navButton {
                 text-align: left;
                 padding: 16px 20px;
                 font-size: 16px;
-                border-radius: 0px;
+                border-radius: 12px;
                 background-color: transparent;
-                color: #ffffff; /* Ensure text/icon is visible */
+                color: #ffffff;
             }
             QPushButton#navButton:hover {
-                background-color: #2d2d2d;
-                color: #ffffff; /* Ensure text/icon is visible on hover */
+                background-color: #111111;
+                color: #ffffff;
             }
             QPushButton#activeNavButton {
                 text-align: left;
                 padding: 16px 20px;
                 font-size: 16px;
-                background-color: #3d3d3d;
-                color: #ff3333;
-                border-radius: 0px;
-                border-left: 3px solid #ff3333;
+                background-color: #162c4a;
+                color: #ffffff;
+                border-radius: 12px;
+                border: none;
             }
             QPushButton#logoutButton {
                 background-color: #ff3333;
                 color: white;
                 padding: 5px 10px;
                 font-size: 10px;
-            }
-            QPushButton#addButton {
-                background-color: #ff3333;
-                color: white;
-                padding: 8px 16px;
-                font-weight: bold;
             }
             QLineEdit, QComboBox, QSpinBox {
                 background-color: #2d2d2d;
@@ -2140,21 +2134,6 @@ class PersistentMainWindow(QMainWindow):
             }
             QLineEdit:focus, QComboBox:focus, QSpinBox:focus {
                 border: 1px solid #ff3333;
-            }
-            QLabel#titleLabel {
-                font-size: 18px;
-                font-weight: bold;
-                color: #ffffff;
-                padding: 10px 0px;
-            }
-            QLabel#logoLabel {
-                font-size: 24px;
-                font-weight: bold;
-                color: #ff3333;
-            }
-            QLabel#subtitleLabel {
-                font-size: 14px;
-                color: #cccccc;
             }
         """)
 
@@ -2185,15 +2164,15 @@ class PersistentMainWindow(QMainWindow):
     def create_custom_title_bar(self, main_layout):
         title_bar = QWidget()
         title_bar.setFixedHeight(48)
-        title_bar.setStyleSheet("background-color: #111111; border-bottom: 1.5px solid #23284a;")
+        title_bar.setStyleSheet("background-color: #050505; border-bottom: none;")
 
         title_layout = QHBoxLayout()
-        title_layout.setContentsMargins(10, 0, 10, 0)
+        title_layout.setContentsMargins(20, 0, 10, 0)
         title_layout.setSpacing(10)
 
         # App name label
-        title_label = QLabel("Fire Vision Pro - CCTV Surveillance System with AI Detection")
-        title_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        title_label = QLabel("Fire Guard - AI powered Fire And People detection System")
+        title_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold;")
         title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Button style for icon buttons
@@ -2284,7 +2263,7 @@ class PersistentMainWindow(QMainWindow):
         """Create the sidebar navigation"""
         self.sidebar = QWidget()
         self.sidebar.setFixedWidth(240)
-        self.sidebar.setStyleSheet("background-color: #111111; border: none;")
+        self.sidebar.setStyleSheet("background-color: #050505; border: none;")
         sidebar_layout = QVBoxLayout(self.sidebar)
         sidebar_layout.setContentsMargins(16, 20, 16, 20)
         sidebar_layout.setSpacing(10)
@@ -2772,16 +2751,15 @@ class PersistentMainWindow(QMainWindow):
         """Set a specific button as active and reset all others"""
         self.reset_all_nav_buttons()
         active_button.setObjectName("activeNavButton")
-        # Apply active styling with left border
+        # Apply active styling with rounded container
         active_button.setStyleSheet("""
             QPushButton#activeNavButton {
-                background-color: #1e3a5f;
-                border-radius: 10px;
+                background-color: #162c4a;
+                border-radius: 12px;
                 border: none;
-                border-left: 3px solid #4a90e2;
             }
             QPushButton#activeNavButton:hover {
-                background-color: #2a4a6f;
+                background-color: #1f3b60;
             }
         """)
         self.update_nav_buttons()
@@ -2789,58 +2767,63 @@ class PersistentMainWindow(QMainWindow):
     def create_cameras_page(self):
         """Create the cameras page"""
         page = QWidget()
+        page.setStyleSheet("background-color: #050505;")
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(20, 20, 20, 20)
+        # Increase bottom margin from 20 to 50 to move the green border up
+        layout.setContentsMargins(20, 0, 20, 50)
 
         header = QWidget()
         header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 15, 0, 10)
 
-        title = QLabel("Cameras with AI People & Fire/Smoke Detection")
-        title.setObjectName("titleLabel")
-
-        self.status_indicator = QLabel("🟢 Service Running")
-        self.status_indicator.setStyleSheet("""
-            QLabel {
-                color: #00ff00;
-                font-size: 12px;
-                font-weight: bold;
-                background-color: rgba(0, 255, 0, 20);
-                padding: 5px 10px;
-                border-radius: 4px;
-                border: 1px solid #00ff00;
-            }
-        """)
-
-        add_camera_btn = QPushButton("➕ Add Camera")
-        add_camera_btn.setObjectName("addButton")
+        add_camera_btn = QPushButton("Add Camera")
+        add_camera_btn.setObjectName("newAddButton")
+        add_camera_btn.setStyleSheet("background-color: #333333; color: white; font-weight: bold; border-radius: 8px; padding: 10px 24px; font-size: 14px;")
         add_camera_btn.clicked.connect(self.show_add_camera_dialog)
 
-        # Add Delete Cameras button
-        delete_cameras_btn = QPushButton("🗑️ Delete Cameras")
-        delete_cameras_btn.setObjectName("addButton")
-        delete_cameras_btn.setStyleSheet("background-color: #ff3333; color: white; font-weight: bold;")
+        delete_cameras_btn = QPushButton("Delete Camera")
+        delete_cameras_btn.setObjectName("newDeleteButton")
+        delete_cameras_btn.setStyleSheet("background-color: #333333; color: white; font-weight: bold; border-radius: 8px; padding: 10px 24px; font-size: 14px;")
         delete_cameras_btn.clicked.connect(self.show_delete_cameras_dialog)
 
-        header_layout.addWidget(title)
         header_layout.addStretch()
         header_layout.addWidget(add_camera_btn)
         header_layout.addWidget(delete_cameras_btn)
 
         layout.addWidget(header)
 
+        # Container for the L-shaped border
+        self.l_shape_container = QWidget()
+        self.l_shape_container.setStyleSheet("""
+            QWidget {
+                border-left: 4px solid #00ff00;
+                border-bottom: 4px solid #00ff00;
+                border-top: none;
+                border-right: none;
+                border-bottom-left-radius: 30px;
+                background-color: transparent;
+            }
+        """)
+        l_shape_layout = QVBoxLayout(self.l_shape_container)
+        l_shape_layout.setContentsMargins(20, 20, 0, 20)
+
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("border: none; background-color: transparent;")
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         self.camera_grid = QGridLayout()
         self.camera_grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.camera_grid.setSpacing(15)
+        self.camera_grid.setSpacing(25)
         camera_container = QWidget()
+        camera_container.setStyleSheet("background-color: transparent; border: none;")
         camera_container.setLayout(self.camera_grid)
 
         scroll_area.setWidget(camera_container)
-        layout.addWidget(scroll_area, 1)
+        l_shape_layout.addWidget(scroll_area)
+        
+        layout.addWidget(self.l_shape_container, 1)
 
         self.load_saved_cameras()
 
@@ -3296,6 +3279,32 @@ class PersistentMainWindow(QMainWindow):
 
     def on_fire_smoke_frame_ready(self, camera_id, annotated_frame, detections, alert_info):
         """Handle fire/smoke detection results"""
+        
+        # Track alerts to change main border color
+        if not hasattr(self, 'active_fire_alerts'):
+            self.active_fire_alerts = {}
+            
+        fire_count = alert_info.get('fire_count', 0)
+        smoke_count = alert_info.get('smoke_count', 0)
+        has_alert = fire_count > 0 or smoke_count > 0
+        
+        self.active_fire_alerts[camera_id] = has_alert
+        
+        # Change the L-shape border color if any camera has an alert
+        if hasattr(self, 'l_shape_container'):
+            any_alert = any(self.active_fire_alerts.values())
+            border_color = "#ff0000" if any_alert else "#00ff00"
+            self.l_shape_container.setStyleSheet(f"""
+                QWidget {{
+                    border-left: 4px solid {border_color};
+                    border-bottom: 4px solid {border_color};
+                    border-top: none;
+                    border-right: none;
+                    border-bottom-left-radius: 30px;
+                    background-color: transparent;
+                }}
+            """)
+
         if camera_id in self.camera_widgets:
             self.camera_widgets[camera_id].update_fire_smoke_frame(annotated_frame, detections, alert_info)
 

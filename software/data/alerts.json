@@ -322,5 +322,143 @@
     "resolved_by": null,
     "resolved_at": null,
     "backend_id": 1
+  },
+  {
+    "id": "smoke_5_1772938488",
+    "camera_id": "5",
+    "camera_name": "Basement",
+    "alert_type": "smoke",
+    "severity": "high",
+    "timestamp": 1772938488.6923091,
+    "confidence": 0.7762791008554718,
+    "description": "Smoke detected with 77.6% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:24:48.692309",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 2
+  },
+  {
+    "id": "fire_5_1772938523",
+    "camera_id": "5",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772938523.2987618,
+    "confidence": 0.6717700882933356,
+    "description": "Fire detected with 67.2% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:25:23.298761",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 3
+  },
+  {
+    "id": "fire_5_1772938554",
+    "camera_id": "5",
+    "camera_name": "Basement",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772938554.3127065,
+    "confidence": 0.5936484365714068,
+    "description": "Fire detected with 59.4% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:25:54.312706",
+      "camera_location": "Basement",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 4
+  },
+  {
+    "id": "smoke_6_1772938799",
+    "camera_id": "6",
+    "camera_name": "store room",
+    "alert_type": "smoke",
+    "severity": "medium",
+    "timestamp": 1772938799.6554368,
+    "confidence": 0.6659496464455069,
+    "description": "Smoke detected with 66.6% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:29:59.655436",
+      "camera_location": "store room",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 5
+  },
+  {
+    "id": "fire_6_1772938809",
+    "camera_id": "6",
+    "camera_name": "store room",
+    "alert_type": "fire",
+    "severity": "high",
+    "timestamp": 1772938809.8053985,
+    "confidence": 0.7269792912469805,
+    "description": "Fire detected with 72.7% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:30:09.805398",
+      "camera_location": "store room",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 6
+  },
+  {
+    "id": "fire_6_1772938820",
+    "camera_id": "6",
+    "camera_name": "store room",
+    "alert_type": "fire",
+    "severity": "medium",
+    "timestamp": 1772938820.6332748,
+    "confidence": 0.5866227844018573,
+    "description": "Fire detected with 58.7% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-08T08:30:20.633274",
+      "camera_location": "store room",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 7
   }
 ]

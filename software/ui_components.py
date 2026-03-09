@@ -12,7 +12,7 @@ try:
                                  QMessageBox, QFrame, QSplitter, QCheckBox, QSlider,
                                  QScrollArea, QTableWidget, QTableWidgetItem, QHeaderView,
                                  QDialog, QFormLayout, QSpinBox, QGroupBox, QTextEdit)
-    from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QPainter
+    from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QPainter, QPainterPath
     from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, QSize, QDateTime
 except Exception as e:
     print("PyQt Import Failed in ui_components:", e)
@@ -176,19 +176,18 @@ class EnhancedCameraWidget(QLabel):
         self.aperture = "F5.6"
         self.white_balance = "5600K"
         self.resolution = "1080p"
-        self.fps = "30fps"
-        
-        self.setFixedSize(380, 280)  # Slightly larger for professional look
+        self.setFixedSize(360, 230)  # Classic aspect ratio
+        self.setObjectName("cameraCard")
         self.setStyleSheet("""
-            QLabel {
-                background-color: #000000;
-                border: 1px solid #232323;
+            QLabel#cameraCard {
+                background-color: #383838;
+                border: none;
+                border-radius: 20px;
                 color: white;
-                font-family: 'Segoe UI', Arial, sans-serif;
             }
         """)
         self.setAlignment(Qt.AlignCenter)
-        self.setText(f"\U0001f4f9 {camera_name}\nConnecting...")
+        self.setText("")
         
         # Create overlay widgets
         self.setup_professional_overlay()
@@ -198,155 +197,55 @@ class EnhancedCameraWidget(QLabel):
         
     def setup_professional_overlay(self):
         """Setup professional overlay elements matching the reference UI"""
-        
-        # Top header with camera info
-        self.header_widget = QWidget(self)
-        self.header_widget.setGeometry(0, 0, 380, 35)
-        self.header_widget.setStyleSheet("""
-            QWidget {
-                background-color: #1f1f1f;
-                border-bottom: 1px solid #2a4a7a;
-            }
-        """)
-        
-        header_layout = QHBoxLayout(self.header_widget)
-        header_layout.setContentsMargins(8, 4, 8, 4)
-        header_layout.setSpacing(5)
-        
-        # Camera ID
-        self.camera_id_label = QLabel(f"CAMERA {self.camera_id.upper()}")
-        self.camera_id_label.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                font-size: 11px;
-                font-weight: bold;
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        # Live indicator
-        self.live_indicator = QLabel("LIVE")
+
+        # LIVE Pill
+        self.live_indicator = QLabel("LIVE", self)
+        self.live_indicator.setGeometry(280, 15, 60, 28)
+        self.live_indicator.setAlignment(Qt.AlignCenter)
         self.live_indicator.setStyleSheet("""
             QLabel {
-                color: #ff4444;
-                font-size: 10px;
+                background-color: #00ff00;
+                color: white;
+                font-size: 13px;
                 font-weight: bold;
-                background: rgba(255, 68, 68, 30);
-                padding: 2px 6px;
-                border-radius: 3px;
-                border: 1px solid #ff4444;
+                border-radius: 14px;
             }
         """)
-        
-        header_layout.addWidget(self.camera_id_label)
-        header_layout.addStretch()
-        header_layout.addWidget(self.live_indicator)
-        
-        # Technical info overlay (top right)
+
+        # Hide older elements
+        self.name_label = QLabel(self)
+        self.name_label.hide()
+        self.status_label = QLabel(self)
+        self.status_label.hide()
+
+        self.header_widget = QWidget(self)
+        self.header_widget.hide()
         self.tech_info_widget = QWidget(self)
-        self.tech_info_widget.setGeometry(280, 40, 95, 60)
-        self.tech_info_widget.setStyleSheet("""
-            QWidget {
-                background: rgba(10, 15, 26, 180);
-                border: 1px solid rgba(30, 58, 95, 100);
-                border-radius: 4px;
-            }
-        """)
-        
-        tech_layout = QVBoxLayout(self.tech_info_widget)
-        tech_layout.setContentsMargins(6, 4, 6, 4)
-        tech_layout.setSpacing(1)
-        
-        # Technical specifications
-        self.iso_label = QLabel(self.iso_value)
-        self.shutter_label = QLabel(f"S: {self.shutter_speed}")
-        self.aperture_label = QLabel(self.aperture)
-        
-        for label in [self.iso_label, self.shutter_label, self.aperture_label]:
-            label.setStyleSheet("""
-                QLabel {
-                    color: #cccccc;
-                    font-size: 9px;
-                    font-weight: normal;
-                    background: transparent;
-                    border: none;
-                }
-            """)
-            tech_layout.addWidget(label)
-        
-        # Bottom status bar
+        self.tech_info_widget.hide()
         self.status_bar_widget = QWidget(self)
-        self.status_bar_widget.setGeometry(0, 245, 380, 35)
-        self.status_bar_widget.setStyleSheet("""
-            QWidget {
-                background-color: #1f1f1f;
-                border-top: 1px solid #2a4a7a;
-            }
-        """)
+        self.status_bar_widget.hide()
         
-        status_layout = QHBoxLayout(self.status_bar_widget)
-        status_layout.setContentsMargins(8, 4, 8, 4)
-        status_layout.setSpacing(10)
+        # Hidden variables to support existing logic
+        self.camera_id_label = QLabel(self)
+        self.camera_id_label.hide()
+        self.iso_label = QLabel(self)
+        self.iso_label.hide()
+        self.shutter_label = QLabel(self)
+        self.shutter_label.hide()
+        self.aperture_label = QLabel(self)
+        self.aperture_label.hide()
+        self.timestamp_label = QLabel(self)
+        self.timestamp_label.hide()
+        self.resolution_label = QLabel(self)
+        self.resolution_label.hide()
+        self.quality_label = QLabel(self)
+        self.quality_label.hide()
+        self.fps_label = QLabel(self)
+        self.fps_label.hide()
         
-        # Timestamp
-        self.timestamp_label = QLabel()
-        self.timestamp_label.setStyleSheet("""
-            QLabel {
-                color: #cccccc;
-                font-size: 10px;
-                font-weight: normal;
-                background: transparent;
-                border: none;
-            }
-        """)
-        self.update_timestamp()
-        
-        # Resolution and FPS info
-        self.resolution_label = QLabel(f"HD | {self.aperture} | {self.resolution}")
-        self.resolution_label.setStyleSheet("""
-            QLabel {
-                color: #cccccc;
-                font-size: 10px;
-                font-weight: normal;
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        # Quality indicator
-        self.quality_label = QLabel("1080p")
-        self.quality_label.setStyleSheet("""
-            QLabel {
-                color: #4CAF50;
-                font-size: 10px;
-                font-weight: bold;
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        # Frame rate
-        self.fps_label = QLabel(self.fps)
-        self.fps_label.setStyleSheet("""
-            QLabel {
-                color: #2196F3;
-                font-size: 10px;
-                font-weight: bold;
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        status_layout.addWidget(self.timestamp_label)
-        status_layout.addWidget(self.resolution_label)
-        status_layout.addStretch()
-        status_layout.addWidget(self.quality_label)
-        status_layout.addWidget(self.fps_label)
-        
-        # People detection indicator (left side)
+        # People detection indicator (hidden normally, can pop up on alert)
         self.people_indicator = QLabel(self)
-        self.people_indicator.setGeometry(8, 45, 80, 25)
+        self.people_indicator.setGeometry(20, 20, 100, 30)
         self.people_indicator.setStyleSheet("""
             QLabel {
                 background: rgba(76, 175, 80, 180);
@@ -362,7 +261,7 @@ class EnhancedCameraWidget(QLabel):
         
         # Fire/Smoke alert indicator (center)
         self.fire_smoke_indicator = QLabel(self)
-        self.fire_smoke_indicator.setGeometry(140, 100, 100, 35)
+        self.fire_smoke_indicator.setGeometry(150, 110, 100, 40)
         self.fire_smoke_indicator.setStyleSheet("""
             QLabel {
                 background: rgba(255, 0, 0, 220);
@@ -377,14 +276,13 @@ class EnhancedCameraWidget(QLabel):
         """)
         self.fire_smoke_indicator.hide()
         
-        # Start timestamp update timer
         self.timestamp_timer = QTimer()
         self.timestamp_timer.timeout.connect(self.update_timestamp)
-        self.timestamp_timer.start(1000)  # Update every second
+        self.timestamp_timer.start(1000)
 
     def set_status(self, status):
         """Update the status text on the widget"""
-        self.setText(f"📹 {self.camera_name}\n{status}")
+        self.status_label.setText(status)
         # Also update the quality label with the status if it's brief
         if len(status) < 15:
             self.quality_label.setText(status)
@@ -402,25 +300,9 @@ class EnhancedCameraWidget(QLabel):
             self.clicked.emit(self.camera_id)
     
     def enterEvent(self, event):
-        self.setStyleSheet("""
-            QLabel {
-                background-color: #000000;
-                border: 2px solid #ff0000;
-                color: white;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
         super().enterEvent(event)
     
     def leaveEvent(self, event):
-        self.setStyleSheet("""
-            QLabel {
-                background-color: #000000;
-                border: 1px solid #232323;
-                color: white;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
         super().leaveEvent(event)
     
     def update_frame(self, frame):
@@ -517,11 +399,11 @@ class EnhancedCameraWidget(QLabel):
                 
                 # Update widget border to indicate alert
                 self.setStyleSheet("""
-                    QLabel {
-                        background-color: #000000;
-                        border: 2px solid #ff0000;
+                    QLabel#cameraCard {
+                        background-color: #383838;
+                        border: 3px solid #ff0000;
+                        border-radius: 20px;
                         color: white;
-                        font-family: 'Segoe UI', Arial, sans-serif;
                     }
                 """)
                 
@@ -529,13 +411,11 @@ class EnhancedCameraWidget(QLabel):
                 self.live_indicator.setText("ALERT")
                 self.live_indicator.setStyleSheet("""
                     QLabel {
-                        color: #ffffff;
-                        font-size: 10px;
+                        background-color: #ff0000;
+                        color: white;
+                        font-size: 13px;
                         font-weight: bold;
-                        background: #ff0000;
-                        padding: 2px 6px;
-                        border-radius: 3px;
-                        border: 1px solid #ff0000;
+                        border-radius: 14px;
                     }
                 """)
             else:
@@ -544,24 +424,22 @@ class EnhancedCameraWidget(QLabel):
                 
                 # Reset border and live indicator
                 self.setStyleSheet("""
-                    QLabel {
-                        background-color: #000000;
-                        border: 1px solid #232323;
+                    QLabel#cameraCard {
+                        background-color: #383838;
+                        border: none;
+                        border-radius: 20px;
                         color: white;
-                        font-family: 'Segoe UI', Arial, sans-serif;
                     }
                 """)
                 
                 self.live_indicator.setText("LIVE")
                 self.live_indicator.setStyleSheet("""
                     QLabel {
-                        color: #ff4444;
-                        font-size: 10px;
+                        background-color: #00ff00;
+                        color: white;
+                        font-size: 13px;
                         font-weight: bold;
-                        background: rgba(255, 68, 68, 30);
-                        padding: 2px 6px;
-                        border-radius: 3px;
-                        border: 1px solid #ff4444;
+                        border-radius: 14px;
                     }
                 """)
             
@@ -591,20 +469,35 @@ class EnhancedCameraWidget(QLabel):
                 qt_image = QImage(frame.data, w, h, w, QImage.Format_Grayscale8)
             
             # Scale to widget size (accounting for overlays)
-            display_size = QSize(380, 280)
+            display_size = QSize(360, 230)
             pixmap = QPixmap.fromImage(qt_image)
             scaled_pixmap = pixmap.scaled(
                 display_size,
-                Qt.KeepAspectRatio,
+                Qt.KeepAspectRatioByExpanding,
                 Qt.SmoothTransformation
             )
             
-            self.setPixmap(scaled_pixmap)
+            x_offset = (scaled_pixmap.width() - display_size.width()) // 2
+            y_offset = (scaled_pixmap.height() - display_size.height()) // 2
+            cropped_pixmap = scaled_pixmap.copy(x_offset, y_offset, display_size.width(), display_size.height())
+            
+            # Clip to rounded corners
+            rounded = QPixmap(display_size)
+            rounded.fill(Qt.transparent)
+            painter = QPainter(rounded)
+            painter.setRenderHint(QPainter.Antialiasing)
+            path = QPainterPath()
+            path.addRoundedRect(0, 0, display_size.width(), display_size.height(), 20, 20)
+            painter.setClipPath(path)
+            painter.drawPixmap(0, 0, cropped_pixmap)
+            painter.end()
+            
+            self.setPixmap(rounded)
             
             # Ensure overlays stay on top
-            self.header_widget.raise_()
-            self.tech_info_widget.raise_()
-            self.status_bar_widget.raise_()
+            self.name_label.raise_()
+            self.status_label.raise_()
+            self.live_indicator.raise_()
             self.people_indicator.raise_()
             self.fire_smoke_indicator.raise_()
             

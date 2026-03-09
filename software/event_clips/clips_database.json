@@ -124,5 +124,41 @@
     "description": "Fire event detected on camera_one",
     "reviewed": false,
     "bookmarked": false
+  },
+  "5_1772938490": {
+    "clip_id": "5_1772938490",
+    "camera_id": "5",
+    "camera_name": "Basement",
+    "event_type": "smoke",
+    "start_time": 1772938485.7995648,
+    "end_time": 1772938505.8902404,
+    "duration": 20.090675592422485,
+    "file_path": "event_clips\\5_1772938490.mp4",
+    "thumbnail_path": "event_thumbnails\\5_1772938490.jpg",
+    "fire_detections": [],
+    "smoke_detections": [],
+    "max_confidence": 0.7762791008554718,
+    "severity_level": "medium",
+    "description": "Smoke event detected on Basement",
+    "reviewed": false,
+    "bookmarked": false
+  },
+  "5_1772938525": {
+    "clip_id": "5_1772938525",
+    "camera_id": "5",
+    "camera_name": "Basement",
+    "event_type": "fire",
+    "start_time": 1772938520.3910794,
+    "end_time": 1772938540.492416,
+    "duration": 20.10133647918701,
+    "file_path": "event_clips\\5_1772938525.mp4",
+    "thumbnail_path": "event_thumbnails\\5_1772938525.jpg",
+    "fire_detections": [],
+    "smoke_detections": [],
+    "max_confidence": 0.6717700882933356,
+    "severity_level": "medium",
+    "description": "Fire event detected on Basement",
+    "reviewed": false,
+    "bookmarked": false
   }
 }
