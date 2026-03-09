@@ -49,5 +49,22 @@
     "motion_sensitivity": 50,
     "pre_record_seconds": 5,
     "post_record_seconds": 10
+  },
+  "4": {
+    "enabled": false,
+    "schedule_type": "always",
+    "time_ranges": [],
+    "days_of_week": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "motion_sensitivity": 50,
+    "pre_record_seconds": 5,
+    "post_record_seconds": 10
   }
 }

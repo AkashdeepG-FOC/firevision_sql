@@ -14,16 +14,23 @@ except ImportError:
     HAS_YOLO = False
     print("Warning: ultralytics not found. Fire/Smoke detection disabled.")
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
-import pygame
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from workers.base_worker import BaseWorker, WorkerStatus
 from confidence_engine import TemporalConfidenceEngine, AlertLevel, DetectionEvidence
 
 
 class FireSmokeDetector(QObject):
-    def send_fire_alert_to_mobile(self, screenshot_path, alert_type="fire", mobile_ip="192.168.1.4", port=58766):
+    def send_fire_alert_to_mobile(self, screenshot_path, alert_type="fire", mobile_ip=None, port=None):
         """Send fire alert screenshot and info to mobile app via HTTP POST."""
         import requests
+        
+        mobile_ip = mobile_ip or os.getenv("MOBILE_ALERT_IP", "192.168.1.4")
+        port = port or int(os.getenv("ALERT_API_PORT", 58766))
+        
         url = f"http://{mobile_ip}:{port}/fire_alert"
         with open(screenshot_path, "rb") as img_file:
             files = {"screenshot": img_file}
@@ -126,12 +133,12 @@ class FireSmokeDetector(QObject):
             if self.config_manager:
                 net_config = self.config_manager.get_network_config()
                 # Parse full URL if needed, but for now assuming direct URL in config
-                mobile_url = net_config.get('mobile_app_url', "http://192.168.1.4:58766")
+                mobile_url = net_config.get('mobile_app_url', f"http://{os.getenv('MOBILE_ALERT_IP', '192.168.1.4')}:{os.getenv('ALERT_API_PORT', 58766)}")
                 url = f"{mobile_url}/fire_alert"
             else:
                 # Fallback to defaults
-                mobile_ip = mobile_ip or "192.168.1.4"
-                port = port or 58766
+                mobile_ip = mobile_ip or os.getenv("MOBILE_ALERT_IP", "192.168.1.4")
+                port = port or int(os.getenv("ALERT_API_PORT", 58766))
                 url = f"http://{mobile_ip}:{port}/fire_alert"
         else:
             url = f"http://{mobile_ip}:{port}/fire_alert"

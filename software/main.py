@@ -26,8 +26,8 @@ from PyQt5.QtWebChannel import QWebChannel
 # Import System Profiler
 try:
     from utils.system_profiler import profiler
-except ImportError:
-    print("Warning: System Profiler not available")
+except ImportError as e:
+    print("Warning: System Profiler not available:", e)
     profiler = None
 
 def resource_path(relative_path):
@@ -44,9 +44,9 @@ try:
     from ultralytics import YOLO
     import torch
     HAS_TORCH = True
-except ImportError:
+except ImportError as e:
     HAS_TORCH = False
-    print("Warning: Torch/YOLO not available. AI features disabled.")
+    print("Warning: Torch/YOLO not available. AI features disabled:", e)
     class YOLO:
         def __init__(self, *args, **kwargs):
             self.device = 'cpu'
@@ -61,8 +61,8 @@ except ImportError:
 # Import the Advanced Camera Management from separate file
 try:
     from AdvancedCamera import AdvancedCameraManagementPage
-except ImportError:
-    print("Warning: AdvancedCamera not available")
+except ImportError as e:
+    print("Warning: AdvancedCamera not available:", e)
     class AdvancedCameraManagementPage(QWidget):
         def __init__(self, *args, **kwargs): super().__init__()
 
@@ -70,8 +70,8 @@ except ImportError:
 # Import voice command system
 try:
     from voice_command_manager import VoiceCommandManager, VoiceCommandWidget
-except ImportError:
-    print("Warning: Voice command system not available")
+except ImportError as e:
+    print("Warning: Voice command system not available:", e)
     class VoiceCommandManager:
         def __init__(self, main_window=None): pass
         def start_listening(self): pass
@@ -83,7 +83,8 @@ except ImportError:
 # Import the splash screen
 try:
     from splash_screen import SplashScreen
-except ImportError:
+except ImportError as e:
+    print("Warning: Splash screen not available.")
     class SplashScreen:
         def show_with_progress(self): pass
         def close(self): pass
@@ -91,8 +92,10 @@ except ImportError:
 # Import the loading screen
 try:
     from loading_screen import LoadingScreen
-except ImportError:
-    print("Warning: Loading screen not available")
+except ImportError as e:
+    print("Warning: Loading screen not available.")
+    # Intentionally not using handle_missing_module here because loading screen missing might not be critical,
+    # but still want to surface warning if possible.
     class LoadingScreen:
         def __init__(self): pass
         def show_with_fade(self): pass
@@ -123,7 +126,8 @@ except ImportError as e:
 
 try:
     from google_drive_manager import GoogleDriveManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("google_drive_manager", e)
     class GoogleDriveManager:
         def __init__(self): pass
         def is_authenticated(self): return False
@@ -131,20 +135,23 @@ except ImportError:
 
 try:
     from recordings_page import RecordingsPage
-except ImportError:
+except ImportError as e:
+    handle_missing_module("recordings_page", e)
     class RecordingsPage(QWidget):
         back_to_cameras = pyqtSignal()
         def __init__(self, gdm): super().__init__()
 
 try:
     from recording_manager import RecordingManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("recording_manager", e)
     class RecordingManager:
         def __init__(self): pass
 
 try:
     from stream_manager import StreamManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("stream_manager", e)
     class StreamManager(QObject):
         stream_started = pyqtSignal(str)
         stream_stopped = pyqtSignal(str)
@@ -154,7 +161,8 @@ except ImportError:
 
 try:
     from enhanced_camera_manager import EnhancedCameraManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("enhanced_camera_manager", e)
     class EnhancedCameraManager(QObject):
         frame_ready = pyqtSignal(str, object)
         detection_frame_ready = pyqtSignal(str, object, list, int)
@@ -218,7 +226,8 @@ except ImportError as e:
 
 try:
     from enhanced_fullscreen_widget import EnhancedFullScreenCameraWidget
-except ImportError:
+except ImportError as e:
+    handle_missing_module("enhanced_fullscreen_widget", e)
     class EnhancedFullScreenCameraWidget(QWidget):
         back_clicked = pyqtSignal()
         def __init__(self, camera_id, camera_name, clip_manager=None, fire_detection_backend=None, notification_manager=None):
@@ -233,13 +242,15 @@ except ImportError:
 
 try:
     from enhanced_review_system import EventClipManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("enhanced_review_system", e)
     class EventClipManager:
         def __init__(self): pass
 
 try:
     from fire_detection_backend import FireDetectionBackend
-except ImportError:
+except ImportError as e:
+    handle_missing_module("fire_detection_backend", e)
     class FireDetectionBackend(QObject):
         alert_created = pyqtSignal(str, str)
         alert_updated = pyqtSignal(str, str)
@@ -251,9 +262,29 @@ except ImportError:
         def set_current_user(self, user_id): pass
         def close(self): pass
 
+def handle_missing_module(module_name: str, exception: Exception):
+    import traceback
+    error_msg = f"Critical module '{module_name}' is missing or failed to load.\n\nError details:\n{str(exception)}"
+    print(f"CRITICAL ERROR: {error_msg}")
+    
+    # Attempt to show a simple error dialog if QApplication is already created or can be created
+    try:
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle("Module Load Error")
+        msg_box.setText(error_msg)
+        msg_box.exec_()
+    except Exception as ui_e:
+        print(f"Could not show error dialog: {ui_e}")
+
 try:
     from notification_manager import NotificationManager
-except ImportError:
+except ImportError as e:
+    handle_missing_module("notification_manager", e)
     class NotificationManager(QObject):
         def __init__(self, *args, **kwargs):
             super().__init__()
@@ -262,7 +293,8 @@ except ImportError:
 
 try:
     from alerts_manager import AlertsManager, AlertsWidget
-except ImportError:
+except ImportError as e:
+    handle_missing_module("alerts_manager", e)
     class AlertsManager:
         def __init__(self): pass
     
@@ -273,7 +305,8 @@ except ImportError:
 
 try:
     from user_managers import UserManager, UserManagementWidget
-except ImportError:
+except ImportError as e:
+    handle_missing_module("user_managers", e)
     class UserManager:
         def __init__(self): pass
     

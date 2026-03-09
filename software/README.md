@@ -3,12 +3,12 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![PyQt5](https://img.shields.io/badge/PyQt5-5.15+-green.svg)](https://www.riverbankcomputing.com/software/pyqt/)
 [![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-red.svg)](https://github.com/ultralytics/ultralytics)
-[![Node.js](https://img.shields.io/badge/Node.js-16+-yellow.svg)](https://nodejs.org/)
-[![Flutter](https://img.shields.io/badge/Flutter-3.0+-cyan.svg)](https://flutter.dev/)
+[![Node.js](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![Flutter](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](BUILD_INSTRUCTIONS.md)
 
-A comprehensive CCTV surveillance system with AI-powered fire/smoke detection, people counting, and real-time monitoring capabilities. Built with Python, PyQt5, YOLOv8, Node.js, and Flutter.
+A comprehensive CCTV surveillance system with AI-powered fire/smoke detection, people counting, and real-time monitoring capabilities. Built with Python, PyQt5, YOLOv8, FastAPI, and MySQL.
 
 ## 🚀 Features
 
@@ -39,8 +39,8 @@ A comprehensive CCTV surveillance system with AI-powered fire/smoke detection, p
 
 ### 📱 Cross-Platform Support
 - **Desktop Application**: PyQt5-based professional interface
-- **Mobile Application**: Flutter-based mobile app
-- **Web Dashboard**: Node.js backend with admin interface
+- **Web Dashboard**: HTML/JS served via FastAPI static routes
+- **Backend**: FastAPI REST API with MySQL Database
 - **System Tray**: Background operation capability
 
 ## 🏗️ System Architecture
@@ -62,16 +62,15 @@ graph TB
         H --> I
     end
     
-    subgraph "Backend Server (Node.js)"
-        J[REST API] --> K[MongoDB]
-        J --> L[Socket.IO]
+    subgraph "Backend Server (FastAPI)"
+        J[REST API] --> K[MySQL]
+        J --> L[Static Dashboard]
         J --> M[Alert Management]
     end
     
-    subgraph "Mobile App (Flutter)"
-        N[Mobile UI] --> O[Camera Streams]
-        N --> P[Alert Notifications]
-        N --> Q[User Auth]
+    subgraph "Clients"
+        N[Web Dashboard] --> O[Alert Overview]
+        N --> P[Camera Overview]
     end
     
     B --> J
@@ -100,7 +99,7 @@ flowchart LR
     
     subgraph "Output Systems"
         C1[Desktop UI]
-        C2[Mobile App]
+        C2[Web Dashboard]
         C3[Backend API]
         C4[Alert System]
     end
@@ -122,9 +121,7 @@ flowchart LR
 ### Prerequisites
 
 - **Python 3.8+**
-- **Node.js 16+**
-- **MongoDB**
-- **Flutter SDK** (for mobile app)
+- **MySQL Server**
 
 ### Quick Start
 
@@ -146,9 +143,9 @@ python install_voice_dependencies.py
 
 4. **Setup Backend Server**
 ```bash
-cd backend_server
-npm install
-npm start
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
 ```
 
 5. **Run Desktop Application**
@@ -161,12 +158,8 @@ python main.py
 python test_voice_commands.py
 ```
 
-5. **Build Mobile App** (Optional)
-```bash
-cd app/foc_version1
-flutter pub get
-flutter build apk
-```
+5. **Access the Dashboard** 
+Open your web browser and navigate to `http://localhost:8000/admin` to view the web dashboard.
 
 ## 📁 Project Structure
 
@@ -178,16 +171,11 @@ fire-vision-pro/
 ├── 👥 people_detector.py           # AI people detection
 ├── ⚙️ config_manager.py            # Configuration management
 ├── 🗺️ map_integration.py           # Location services
-├── 🖥️ backend_server/              # Node.js backend
-│   ├── server.js                   # Main server file
-│   ├── package.json                # Node.js dependencies
-│   └── admin_dashboard.html        # Web dashboard
-├── 📱 app/                         # Flutter mobile app
-│   └── foc_version1/
-│       ├── lib/                    # Dart source code
-│       ├── android/                # Android platform
-│       ├── ios/                    # iOS platform
-│       └── pubspec.yaml            # Flutter dependencies
+├── 🖥️ backend/                     # FastAPI backend
+│   ├── main.py                     # Main server entries
+│   ├── routers/                    # API Endpoints
+│   ├── models/                     # Database Models
+│   └── static/dashboard/           # Web dashboard
 ├── 📂 config/                      # Configuration files
 ├── 🎬 recordings/                  # Video recordings
 ├── 🚨 event_clips/                 # Alert video clips
@@ -289,11 +277,10 @@ pyinstaller --onefile --windowed --name=FireVisionPro main.py
 python build_app.bat
 ```
 
-### Mobile Application
+### Backend API
 ```bash
-cd app/foc_version1
-flutter build apk --release
-flutter build ios --release
+cd backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 ## 🧪 Testing
@@ -344,9 +331,8 @@ This project is licensed under the Private License - see the [LICENSE](LICENSE) 
 - [Ultralytics](https://github.com/ultralytics/ultralytics) for YOLOv8
 - [OpenCV](https://opencv.org/) for computer vision
 - [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) for GUI
-- [Flutter](https://flutter.dev/) for mobile development
-- [Node.js](https://nodejs.org/) for backend services
-- [MongoDB](https://www.mongodb.com/) for database
+- [FastAPI](https://fastapi.tiangolo.com/) for backend services
+- [MySQL](https://www.mysql.com/) for database
 - [Folium](https://python-visualization.github.io/folium/) for maps
 
 ## 📞 Contact

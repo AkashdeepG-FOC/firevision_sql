@@ -7,10 +7,101 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                            QTableWidget, QTableWidgetItem, QHeaderView,
                            QMessageBox, QDoubleSpinBox, QGroupBox, QTextEdit,
                            QComboBox)
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QUrl
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl
 import json
+
+class MapPickerWidget(QDialog):
+    """Dialog to pick a location from a map"""
+    location_picked = pyqtSignal(float, float)
+
+    def __init__(self, parent=None, initial_lat=0.0, initial_lng=0.0):
+        super().__init__(parent)
+        self.setWindowTitle("Pick Location on Map")
+        self.setFixedSize(800, 600)
+        self.setModal(True)
+        
+        layout = QVBoxLayout(self)
+        
+        self.map_view = QWebEngineView()
+        layout.addWidget(self.map_view)
+        
+        btn_layout = QHBoxLayout()
+        select_btn = QPushButton("Select Current Marker")
+        select_btn.clicked.connect(self.accept_location)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(select_btn)
+        btn_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        self.current_lat = initial_lat
+        self.current_lng = initial_lng
+        self.setup_map(initial_lat, initial_lng)
+        
+    def setup_map(self, lat, lng):
+        start_zoom = 15 if lat != 0.0 else 2
+        m = folium.Map(location=[lat, lng], zoom_start=start_zoom)
+        
+        # Add a marker that can be moved
+        # Using a click event to move the marker
+        m.add_child(folium.LatLngPopup())
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <script>
+                var marker = null;
+            </script>
+        </head>
+        <body>
+            {m._repr_html_()}
+            <script>
+                // This is a bit hacky but works for folium LatLngPopup
+                setInterval(function() {{
+                    var popups = document.getElementsByClassName('leaflet-popup-content');
+                    if (popups.length > 0) {{
+                        var text = popups[0].innerText;
+                        var latlng = text.split(',');
+                        if (latlng.length == 2) {{
+                            window.currentLat = parseFloat(latlng[0]);
+                            window.currentLng = parseFloat(latlng[1]);
+                        }}
+                    }}
+                }}, 500);
+            </script>
+        </body>
+        </html>
+        """
+        
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8')
+        temp_file.write(html)
+        temp_file.close()
+        
+        self.map_view.load(QUrl.fromLocalFile(temp_file.name))
+        
+    def accept_location(self):
+        # Retrieve the JS variables
+        self.map_view.page().runJavaScript("window.currentLat", self._handle_lat)
+        
+    def _handle_lat(self, lat):
+        if lat is not None:
+            self.current_lat = lat
+            self.map_view.page().runJavaScript("window.currentLng", self._handle_lng)
+        else:
+            QMessageBox.warning(self, "Warning", "Please click on the map to place a marker first.")
+            
+    def _handle_lng(self, lng):
+        if lng is not None:
+            self.current_lng = lng
+            self.location_picked.emit(self.current_lat, self.current_lng)
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Warning", "Please click on the map to place a marker first.")
 
 class CameraLocationManager(QWidget):
     """Camera location management widget for adding/editing camera coordinates"""
@@ -328,9 +419,26 @@ class CameraLocationManager(QWidget):
         """)
         get_location_btn.clicked.connect(self.get_current_location)
         
+        pick_map_btn = QPushButton("🗺️ Pick on Map")
+        pick_map_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #9C27B0;
+                color: white;
+                padding: 10px 20px;
+                font-weight: bold;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #7B1FA2;
+            }
+        """)
+        pick_map_btn.clicked.connect(self.open_map_picker)
+        
         buttons_layout.addWidget(save_btn)
         buttons_layout.addWidget(clear_btn)
         buttons_layout.addWidget(get_location_btn)
+        buttons_layout.addWidget(pick_map_btn)
         buttons_layout.addStretch()
         
         form_layout.addWidget(form_widget)
@@ -425,6 +533,24 @@ class CameraLocationManager(QWidget):
                               "You can use Google Maps to find coordinates:\n"
                               "1. Right-click on location in Google Maps\n"
                               "2. Click on coordinates to copy them")
+                              
+    def open_map_picker(self):
+        """Open the map picker dialog to select coordinates"""
+        if not self.selected_camera_id:
+             QMessageBox.warning(self, "No Camera Selected", "Please select a camera first before picking a location.")
+             return
+             
+        initial_lat = self.latitude_input.value()
+        initial_lng = self.longitude_input.value()
+        
+        picker = MapPickerWidget(self, initial_lat, initial_lng)
+        picker.location_picked.connect(self.on_location_picked)
+        picker.exec_()
+        
+    def on_location_picked(self, lat, lng):
+        """Handle location picked from map"""
+        self.latitude_input.setValue(lat)
+        self.longitude_input.setValue(lng)
         
     def refresh_camera_list(self):
         """Refresh the camera list"""

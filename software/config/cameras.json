@@ -54,9 +54,9 @@
     "type": "webcam"
   },
   {
-    "id": "6",
-    "name": "store room",
-    "source": "D:/giit/firevision_sql/software/videos/Security_Camera_Video_of_Fire_at_WLNE_720P.mp4",
-    "type": "video_file"
+    "id": "4",
+    "name": "camera_one",
+    "source": "0",
+    "type": "webcam"
   }
 ]
