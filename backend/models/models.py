@@ -18,7 +18,7 @@ class User(Base):
     role = Column(String(50), default=UserRole.OPERATOR)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    cameras = relationship("Camera", back_populates="assigned_user", cascade="all, delete-orphan")
+    cameras = relationship("Camera", back_populates="user", cascade="all, delete-orphan")
 
 class Camera(Base):
     __tablename__ = "cameras"
@@ -28,10 +28,10 @@ class Camera(Base):
     location = Column(String(255))
     ip_address = Column(String(50))
     status = Column(String(20), default="inactive") # active, inactive
-    assigned_user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    assigned_user = relationship("User", back_populates="cameras")
+    user = relationship("User", back_populates="cameras")
     alerts = relationship("Alert", back_populates="camera", cascade="all, delete-orphan")
 
 class AlertType(str, enum.Enum):

@@ -50,18 +50,18 @@ class CameraBase(BaseModel):
     status: Optional[str] = "inactive"
 
 class CameraCreate(CameraBase):
-    assigned_user_id: Optional[int] = None
+    user_id: Optional[int] = None
 
 class CameraUpdate(BaseModel):
     camera_name: Optional[str] = None
     location: Optional[str] = None
     ip_address: Optional[str] = None
     status: Optional[str] = None
-    assigned_user_id: Optional[int] = None
+    user_id: Optional[int] = None
 
 class Camera(CameraBase):
     id: int
-    assigned_user_id: Optional[int] = None
+    user_id: Optional[int] = None
     created_at: datetime
 
     class Config:

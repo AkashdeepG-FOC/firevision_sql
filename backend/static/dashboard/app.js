@@ -357,7 +357,7 @@ modalForm.addEventListener('submit', async (e) => {
                 ip_address: document.getElementById('c-ip').value,
                 location: document.getElementById('c-loc').value,
                 status: 'active',
-                assigned_user_id: state.user.id
+                user_id: state.user.id
             };
         }
 
