@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from workers.base_worker import BaseWorker, WorkerStatus
-from confidence_engine import TemporalConfidenceEngine, AlertLevel, DetectionEvidence
+from core.confidence_engine import TemporalConfidenceEngine, AlertLevel, DetectionEvidence
 
 
 class FireSmokeDetector(QObject):
