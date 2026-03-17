@@ -599,5 +599,52 @@
     "resolved_by": null,
     "resolved_at": null,
     "backend_id": 13
+  },
+  {
+    "id": "people_4_1773108925",
+    "camera_id": "4",
+    "camera_name": "camera_one",
+    "alert_type": "people",
+    "severity": "medium",
+    "timestamp": 1773108925.046563,
+    "confidence": 0.8852226734161377,
+    "description": "1 person(s) detected with 88.5% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-10T07:45:25.046562",
+      "people_count": 1,
+      "camera_location": "camera_one",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 14
+  },
+  {
+    "id": "fire_4_1773108952",
+    "camera_id": "4",
+    "camera_name": "camera_one",
+    "alert_type": "fire",
+    "severity": "high",
+    "timestamp": 1773108952.3420887,
+    "confidence": 0.7541573965413866,
+    "description": "Fire detected with 75.4% confidence",
+    "status": "active",
+    "footage_path": null,
+    "thumbnail_path": null,
+    "metadata": {
+      "detection_time": "2026-03-10T07:45:52.342088",
+      "camera_location": "camera_one",
+      "alert_source": "ai_detection"
+    },
+    "acknowledged_by": null,
+    "acknowledged_at": null,
+    "resolved_by": null,
+    "resolved_at": null,
+    "backend_id": 15
   }
 ]

@@ -1,0 +1,70 @@
+<mxfile host="65bd71144e">
+    <diagram id="DataFlow" name="FireVision DFD">
+        <mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                
+                <!-- External Entities -->
+                <mxCell id="ext_cam" value="IP Camera / RTSP" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="60" y="240" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_admin" value="Administrator / User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="660" y="240" width="120" height="60" as="geometry"/>
+                </mxCell>
+
+                <!-- Processes -->
+                <mxCell id="p1" value="1.0&#10;Stream Ingestion&#10;(Camera Manager)" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="250" y="210" width="120" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2" value="2.0&#10;Fire/Smoke&#10;AI Detection" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="250" y="440" width="120" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3" value="3.0&#10;Backend API &amp;&#10;Alert Mgt" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="460" y="210" width="120" height="120" as="geometry"/>
+                </mxCell>
+
+                <!-- Data Stores -->
+                <mxCell id="ds_db" value="D1 : MySQL Database" style="shape=partialRectangle;right=0;left=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="450" y="470" width="140" height="60" as="geometry"/>
+                </mxCell>
+
+                <!-- Data Flows -->
+                <mxCell id="flow1" value="Video Stream" style="endArrow=classic;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="ext_cam" target="p1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow2" value="Decoded Frames" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="p1" target="p2">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow3" value="Detection Results&#10;(Bounding Boxes)" style="endArrow=classic;html=1;entryX=0;entryY=1;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="p2" target="p3">
+                    <mxGeometry x="-0.0769" y="-2" width="50" height="50" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="flow4" value="Store Alerts/Cameras" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="p3" target="ds_db">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow5" value="Query Settings/Users" style="endArrow=classic;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="ds_db" target="p3">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow6" value="Live Feed &amp; Alerts" style="endArrow=classic;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" source="p3" target="ext_admin">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow7" value="Config &amp; Requests" style="endArrow=classic;html=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" edge="1" parent="1" source="ext_admin" target="p3">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="flow8" value="System Config" style="endArrow=classic;dashed=1;html=1;entryX=1;entryY=0;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="p3" target="p1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

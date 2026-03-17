@@ -2501,7 +2501,7 @@ class PersistentMainWindow(QMainWindow):
             self.hide()
             if not self.config_manager.get_config("app_settings.tray_notification_shown", False):
                 self.tray_icon.showMessage(
-                    "Fire Vision Pro",
+                    "Fire Vision",
                     "Application was minimized to tray. Cameras and streaming continue running in background. Login required when reopened.",
                     QSystemTrayIcon.Information,
                     3000
