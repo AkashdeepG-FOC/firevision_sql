@@ -5,6 +5,7 @@ import datetime
 import threading
 import os
 import json
+import queue
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer, QThread
@@ -96,85 +97,137 @@ class EventClipManager(QObject):
     
     def add_frame_to_recording(self, camera_id: str, frame: np.ndarray, 
                              detections: Dict = None):
-        """Add frame to active recording"""
+        """Add frame to active recording (async via internal queueing)"""
         if camera_id not in self.active_recordings:
             return
             
         recording = self.active_recordings[camera_id]
-        clip = recording['clip']
         
-        # Initialize video writer if not done
+        # Initialize background writer thread if not done
         if recording['writer'] is None:
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            # We use a dedicated thread for writing to prevent UI stutter
+            class VideoWriterWorker(threading.Thread):
+                def __init__(self, clip, manager, cam_id):
+                    super().__init__(daemon=True)
+                    self.clip = clip
+                    self.manager = manager
+                    self.cam_id = cam_id
+                    self.frame_queue = queue.Queue(maxsize=300) # Buffer for ~10 seconds
+                    self.running = True
+                    
+                def run(self):
+                    try:
+                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                        h, w = self.clip.file_height, self.clip.file_width
+                        writer = cv2.VideoWriter(
+                            self.clip.file_path, fourcc, 20.0, (w, h)
+                        )
+                        print(f"🧵 [VideoThread] Started writer for {self.cam_id} -> {self.clip.file_path}")
+                        
+                        while self.running or not self.frame_queue.empty():
+                            try:
+                                item = self.frame_queue.get(timeout=0.5)
+                                if item is None: break
+                                f, devs = item
+                                writer.write(f)
+                            except queue.Empty:
+                                continue
+                            except Exception as e:
+                                print(f"❌ [VideoThread] Error writing frame: {e}")
+                                break
+                                
+                        writer.release()
+                        print(f"✅ [VideoThread] Finished writing {self.cam_id}. Finalizing clip...")
+                        
+                        # Finalize on this background thread!
+                        self.manager._finalize_clip_in_background(self.cam_id, self.clip)
+                        
+                    except Exception as e:
+                        print(f"❌ [VideoThread] Critical error in writer thread: {e}")
+
             h, w = frame.shape[:2]
-            recording['writer'] = cv2.VideoWriter(
-                clip.file_path, fourcc, 30.0, (w, h)
-            )
+            # Store dimensions in clip for the worker
+            recording['clip'].file_width = w
+            recording['clip'].file_height = h
+            
+            worker = VideoWriterWorker(recording['clip'], self, camera_id)
+            recording['writer'] = worker
+            worker.start()
         
-        # Write frame
-        recording['writer'].write(frame)
-        
-        # Store detections
+        # Add frame to queue (non-blocking)
+        try:
+            # Copy frame to avoid issues if the original is modified
+            recording['writer'].frame_queue.put((frame.copy(), detections), block=False)
+        except Exception:
+            # Queue full or other error, skip frame to prioritize UI
+            pass
+            
+        # Store detections in the clip metadata (this is fast)
         if detections:
-            current_time = time.time()
+            clip = recording['clip']
             if 'fire_detections' in detections:
                 clip.fire_detections.extend(detections['fire_detections'])
             if 'smoke_detections' in detections:
                 clip.smoke_detections.extend(detections['smoke_detections'])
         
-        # Check if recording is complete
+        # Check if recording should finish duration-wise
         if time.time() - recording['start_time'] >= self.clip_duration:
             self.finish_recording(camera_id)
-    
+
     def finish_recording(self, camera_id: str):
-        """Finish and save event recording"""
+        """Signal the background worker to finish and stop accepting new frames"""
         if camera_id not in self.active_recordings:
             return
             
         recording = self.active_recordings[camera_id]
-        clip = recording['clip']
         
-        # Close video writer
+        # Signal worker to stop after draining the queue
         if recording['writer']:
-            recording['writer'].release()
-        
-        # Generate thumbnail
-        self.generate_thumbnail(clip)
-        
-        # Update clip metadata
-        clip.end_time = time.time()
-        clip.duration = clip.end_time - clip.start_time
-        
-        # Determine final event type based on detections
-        has_fire = len(clip.fire_detections) > 0
-        has_smoke = len(clip.smoke_detections) > 0
-        
-        if has_fire and has_smoke:
-            clip.event_type = 'combined'
-        elif has_fire:
-            clip.event_type = 'fire'
-        elif has_smoke:
-            clip.event_type = 'smoke'
-        
-        # Calculate max confidence
-        all_confidences = []
-        all_confidences.extend([d.get('confidence', 0) for d in clip.fire_detections])
-        all_confidences.extend([d.get('confidence', 0) for d in clip.smoke_detections])
-        
-        if all_confidences:
-            clip.max_confidence = max(all_confidences)
-        
-        # Save to database
-        self.clips_database[clip.clip_id] = clip
-        self.save_clips_database()
-        
-        # Clean up
+            recording['writer'].running = False
+            
+        # Remove from active recordings immediately so no more frames are added
         del self.active_recordings[camera_id]
-        
-        # Emit signal
-        self.clip_created.emit(clip)
-        
-        print(f"✅ Event clip saved: {clip.clip_id}")
+        print(f"🏁 Recording scheduled for completion: {camera_id}")
+
+    def _finalize_clip_in_background(self, camera_id, clip):
+        """Finalize clip, generate thumbnail, and save metadata (called from worker thread)"""
+        try:
+            # Generate thumbnail
+            self.generate_thumbnail(clip)
+            
+            # Update clip metadata
+            clip.end_time = time.time()
+            clip.duration = clip.end_time - clip.start_time
+            
+            # Determine final event type based on detections
+            has_fire = len(clip.fire_detections) > 0
+            has_smoke = len(clip.smoke_detections) > 0
+            
+            if has_fire and has_smoke:
+                clip.event_type = 'combined'
+            elif has_fire:
+                clip.event_type = 'fire'
+            elif has_smoke:
+                clip.event_type = 'smoke'
+            
+            # Calculate max confidence
+            all_confidences = []
+            all_confidences.extend([d.get('confidence', 0) for d in clip.fire_detections])
+            all_confidences.extend([d.get('confidence', 0) for d in clip.smoke_detections])
+            
+            if all_confidences:
+                clip.max_confidence = max(all_confidences)
+            
+            # Save to database
+            self.clips_database[clip.clip_id] = clip
+            self.save_clips_database()
+            
+            # Emit signal (PyQt signals are thread-safe and will be delivered to UI thread)
+            self.clip_created.emit(clip)
+            
+            print(f"✨ Event clip finalized: {clip.clip_id}")
+        except Exception as e:
+            print(f"❌ Error finalizing clip: {e}")
     
     def generate_thumbnail(self, clip: EventClip):
         """Generate thumbnail for the clip"""

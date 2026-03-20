@@ -719,22 +719,50 @@ class FireDetectionSidePanelWidget(QWidget):
             self.update_frame_display()
             
     def dispatch_alert(self):
-        """Handle dispatch button click"""
+        """Handle dispatch button click with async notification processing"""
         current_frame_data = self.fire_detected_frames[self.current_frame_index]
         clip_id = current_frame_data.get('clip_id', 'unknown')
         
-        # Play alarm audio when dispatch is clicked
+        # Play alarm audio when dispatch is clicked (this is fast)
         try:
             if self.alarm_player.mediaStatus() == QMediaPlayer.LoadedMedia:
                 self.alarm_player.play()
-                print("🔊 Playing alarm audio for dispatch")
-            else:
-                print("⚠️ Alarm audio not loaded properly")
+                print("🔊 [Dispatch] Playing alarm audio")
         except Exception as e:
-            print(f"❌ Error playing alarm audio: {e}")
+            print(f"❌ [Dispatch] Error playing alarm audio: {e}")
         
+        # Define background worker for heavy notification and backend tasks
+        def dispatch_worker(cam_id, cam_name, f_copy, dets, info, alert_id):
+            try:
+                print(f"🧵 [Dispatch Thread] Starting emergency notification for {cam_name}...")
+                
+                # 1. Send comprehensive notification (mobile + backend)
+                if self.notification_manager:
+                    results = self.notification_manager.send_comprehensive_fire_alert(
+                        camera_id=cam_id,
+                        camera_name=cam_name,
+                        frame=f_copy,
+                        detections=dets,
+                        alert_info=info
+                    )
+                    print(f"✅ [Dispatch Thread] Notification results: {results}")
+                
+                # 2. Dispatch emergency services on backend
+                if self.fire_detection_backend and alert_id:
+                    success = self.fire_detection_backend.dispatch_emergency_services(
+                        alert_id=alert_id,
+                        dispatched_by="user",
+                        dispatch_notes=f"Emergency services dispatched from camera {cam_id}"
+                    )
+                    if success:
+                        print(f"🚨 [Dispatch Thread] Emergency services dispatched for alert {alert_id}")
+                    else:
+                        print(f"❌ [Dispatch Thread] Failed to dispatch emergency services for alert {alert_id}")
+            except Exception as e:
+                print(f"❌ [Dispatch Thread] Error in background dispatch: {e}")
+
         # Send comprehensive notification to both backend and mobile app
-        if self.notification_manager and self.current_alert_id:
+        if self.current_alert_id:
             try:
                 # Get current frame and detection data
                 frame = current_frame_data.get('frame')
@@ -742,55 +770,29 @@ class FireDetectionSidePanelWidget(QWidget):
                 alert_info = current_frame_data.get('alert_info', {})
                 
                 if frame is not None:
-                    # Send to both backend and mobile app
-                    results = self.notification_manager.send_comprehensive_fire_alert(
-                        camera_id=self.camera_id,
-                        camera_name=self.camera_name,
-                        frame=frame,
-                        detections=detections,
-                        alert_info=alert_info
-                    )
+                    # Create a copy for the thread
+                    frame_copy = frame.copy()
                     
-                    # Log results
-                    backend_status = "✅" if results['backend'] else "❌"
-                    mobile_status = "✅" if results['mobile'] else "❌"
-                    print(f"🚨 Emergency dispatch notification results:")
-                    print(f"   Backend: {backend_status}")
-                    print(f"   Mobile App: {mobile_status}")
+                    # Start background worker
+                    threading.Thread(
+                        target=dispatch_worker,
+                        args=(self.camera_id, self.camera_name, frame_copy, detections, alert_info, self.current_alert_id),
+                        daemon=True
+                    ).start()
                     
-                    # Show success message
-                    QMessageBox.information(self, "Dispatch Successful", 
-                                          f"Emergency services have been dispatched successfully!\n\n"
-                                          f"Backend: {backend_status}\n"
-                                          f"Mobile App: {mobile_status}")
+                    print(f"🚀 [Dispatch] Emergency alert offloaded to background thread")
+                    
+                    # Show immediate feedback (optimistic UI)
+                    QMessageBox.information(self, "Dispatching...", 
+                                          "Emergency notification is being sent in the background. "
+                                          "Services are being notified.")
                 else:
-                    print("⚠️ No frame data available for notification")
-                    QMessageBox.warning(self, "Dispatch Warning", 
-                                      "Emergency services dispatched but notification data incomplete.")
+                    print("⚠️ [Dispatch] No frame data available for notification")
                     
             except Exception as e:
-                print(f"❌ Error sending dispatch notification: {e}")
-                QMessageBox.critical(self, "Notification Error", 
-                                   f"Error sending dispatch notification: {e}")
-        
-        # If we have a backend connection and alert ID, dispatch emergency services
-        if self.fire_detection_backend and self.current_alert_id:
-            try:
-                success = self.fire_detection_backend.dispatch_emergency_services(
-                    alert_id=self.current_alert_id,
-                    dispatched_by="user",
-                    dispatch_notes=f"Emergency services dispatched from camera {self.camera_id}"
-                )
-                
-                if success:
-                    print(f"🚨 Emergency services dispatched for alert {self.current_alert_id}")
-                else:
-                    print(f"❌ Failed to dispatch emergency services for alert {self.current_alert_id}")
-                    
-            except Exception as e:
-                print(f"❌ Error dispatching emergency services: {e}")
+                print(f"❌ [Dispatch] Error initiating notification: {e}")
         else:
-            print(f"⚠️ No backend connection or alert ID available for dispatch")
+            print(f"⚠️ [Dispatch] No alert ID available for dispatch")
         
         # Emit signal to parent widget
         self.dispatch_clicked.emit(self.camera_id, clip_id)

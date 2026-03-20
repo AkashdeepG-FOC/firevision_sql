@@ -1,899 +1,767 @@
 import os
 import sys
-import subprocess
-import cv2
 import datetime
 import threading
-import numpy as np
+import cv2
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, QListWidget, QListWidgetItem,
-    QHBoxLayout, QMessageBox, QScrollArea, QGridLayout, QSlider, QFrame,
-    QDialog, QFileDialog, QSizePolicy, QStackedWidget, QApplication
+    QWidget, QVBoxLayout, QLabel, QPushButton,
+    QHBoxLayout, QMessageBox, QScrollArea, QGridLayout,
+    QSlider, QFrame, QSizePolicy, QStackedWidget, QApplication,
+    QGraphicsDropShadowEffect
 )
-from PyQt5.QtCore import pyqtSignal, QUrl, Qt, QTimer, QSize, QRect, QPoint, QThread, pyqtSlot
+from PyQt5.QtCore import pyqtSignal, QUrl, Qt, QTimer, QSize, QThread, pyqtSlot, QPropertyAnimation, QEasingCurve
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtGui import QCursor, QPixmap, QImage, QPainter, QColor, QPen, QFont, QIcon
+from PyQt5.QtGui import QCursor, QPixmap, QImage, QPainter, QColor, QPen, QFont, QIcon, QLinearGradient, QBrush
 
+# ─── Colour Palette ──────────────────────────────────────────────────────────
+BG_DEEP    = "#09090b"   # page background
+BG_CARD    = "#111115"   # card surface
+BG_RAISED  = "#18181c"   # raised elements / inputs
+BG_HEADER  = "#0f0f13"   # header bar
+BORDER     = "#27272d"   # subtle border
+BORDER_LT  = "#3f3f46"   # lighter border / divider
+ACCENT     = "#e84040"   # brand red
+ACCENT_DIM = "#7a1f1f"   # dimmed red for hovers
+BLUE       = "#3b82f6"
+BLUE_DIM   = "#1e40af"
+GREEN      = "#10b981"
+TEXT_PRI   = "#fafafa"
+TEXT_SEC   = "#a1a1aa"
+TEXT_MUTED = "#52525b"
+
+CARD_STYLE = f"""
+    QWidget {{
+        background-color: {BG_CARD};
+        border: 1px solid {BORDER};
+        border-radius: 14px;
+    }}
+    QWidget:hover {{
+        border: 1px solid {BORDER_LT};
+    }}
+"""
+
+# ─── Thumbnail Thread ─────────────────────────────────────────────────────────
 class ThumbnailGeneratorThread(QThread):
-    """Thread for generating video thumbnails"""
-    thumbnail_ready = pyqtSignal(str, str)  # video_path, thumbnail_path
-    
+    thumbnail_ready = pyqtSignal(str, str)
+
     def __init__(self, video_path, output_path):
         super().__init__()
-        self.video_path = video_path
+        self.video_path  = video_path
         self.output_path = output_path
-    
+
     def run(self):
         try:
             cap = cv2.VideoCapture(self.video_path)
             if not cap.isOpened():
                 return
-            
-            # Get frame at 10% of video duration
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            frame_pos = int(total_frames * 0.1)
-            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
-            
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, int(total * 0.12)))
             ret, frame = cap.read()
             if ret:
-                # Resize to card size
                 frame_resized = cv2.resize(frame, (320, 180))
                 cv2.imwrite(self.output_path, frame_resized)
                 self.thumbnail_ready.emit(self.video_path, self.output_path)
-            
             cap.release()
         except Exception as e:
-            print(f"Error generating thumbnail: {e}")
+            print(f"Thumbnail error: {e}")
 
+
+# ─── Recording Card ───────────────────────────────────────────────────────────
 class ModernRecordingCard(QWidget):
-    """Modern recording card matching the reference design exactly"""
-    
-    play_clicked = pyqtSignal(str)
+    play_clicked   = pyqtSignal(str)
     delete_clicked = pyqtSignal(str)
-    
+
     def __init__(self, filename, parent=None):
         super().__init__(parent)
-        self.filename = filename
-        self.video_path = os.path.join("recordings", filename)
+        self.filename      = filename
+        self.video_path    = os.path.join("recordings", filename)
         self.thumbnail_path = None
-        
-        self.setFixedSize(320, 240)
+
+        self.setFixedSize(300, 250)
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        
-        # Set the exact styling from the reference image
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1a1d29;
-                border: 1px solid #2a2d3a;
-                border-radius: 12px;
-                margin: 5px;
-            }
-            QWidget:hover {
-                background-color: #1f2235;
-                border: 1px solid #3a3d4a;
-            }
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {BG_CARD};
+                border: 1px solid {BORDER};
+                border-radius: 14px;
+            }}
         """)
-        
-        self.setup_ui()
-        self.generate_thumbnail()
-    
-    def setup_ui(self):
-        """Setup the card UI to match reference design exactly"""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        
-        # Video thumbnail area (top part)
-        self.thumbnail_widget = QWidget()
-        self.thumbnail_widget.setFixedSize(320, 180)
-        self.thumbnail_widget.setStyleSheet("""
-            QWidget {
-                background-color: #0f1419;
-                border-top-left-radius: 12px;
-                border-top-right-radius: 12px;
-                border-bottom: none;
-                margin: 0px;
-            }
-        """)
-        
-        thumbnail_layout = QVBoxLayout(self.thumbnail_widget)
-        thumbnail_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.thumbnail_label = QLabel()
-        self.thumbnail_label.setAlignment(Qt.AlignCenter)
-        self.thumbnail_label.setStyleSheet("""
-            QLabel {
-                background-color: transparent;
+
+        # Drop shadow
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(22)
+        shadow.setColor(QColor(0, 0, 0, 140))
+        shadow.setOffset(0, 4)
+        self.setGraphicsEffect(shadow)
+
+        self._setup_ui()
+        self._generate_thumbnail()
+
+    def _setup_ui(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # ── Thumbnail ──────────────────────────────────
+        self.thumb_label = QLabel()
+        self.thumb_label.setFixedSize(300, 168)
+        self.thumb_label.setAlignment(Qt.AlignCenter)
+        self.thumb_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: #0a0a0d;
+                border-top-left-radius: 14px;
+                border-top-right-radius: 14px;
                 border: none;
-                color: #666;
-                font-size: 48px;
-            }
+                color: {TEXT_MUTED};
+                font-size: 36px;
+            }}
         """)
-        self.thumbnail_label.setText("\ud83d\udcf9")
-        
-        thumbnail_layout.addWidget(self.thumbnail_label)
-        
-        # Info section (bottom part)
-        info_widget = QWidget()
-        info_widget.setFixedSize(320, 60)
-        info_widget.setStyleSheet("""
-            QWidget {
-                background-color: transparent;
-                border-bottom-left-radius: 12px;
-                border-bottom-right-radius: 12px;
-                margin: 0px;
-            }
-        """)
-        
-        info_layout = QVBoxLayout(info_widget)
-        info_layout.setContentsMargins(12, 8, 12, 8)
-        info_layout.setSpacing(4)
-        
-        # Recording name
-        name_text = self.get_clean_name()
-        self.name_label = QLabel(name_text)
-        self.name_label.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                font-size: 14px;
-                font-weight: bold;
+        self.thumb_label.setText("  ")   # placeholder — will be replaced by pixmap
+
+        # Placeholder icon painted via a child label
+        self._placeholder = QLabel(self.thumb_label)
+        self._placeholder.setText("[ VIDEO ]")
+        self._placeholder.setAlignment(Qt.AlignCenter)
+        self._placeholder.setGeometry(0, 0, 300, 168)
+        self._placeholder.setStyleSheet(f"""
+            QLabel {{
                 background: transparent;
-                border: none;
-            }
-        """)
-        
-        # Bottom row with date and buttons
-        bottom_row = QWidget()
-        bottom_layout = QHBoxLayout(bottom_row)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(8)
-        
-        # Date with calendar icon
-        date_str = self.extract_date_from_filename()
-        self.date_label = QLabel(f"\ud83d\udcc5 {date_str}")
-        self.date_label.setStyleSheet("""
-            QLabel {
-                color: #8a8a8a;
+                color: {TEXT_MUTED};
                 font-size: 12px;
+                font-weight: 600;
+                letter-spacing: 3px;
+                border: none;
+            }}
+        """)
+
+        root.addWidget(self.thumb_label)
+
+        # ── Info Strip ─────────────────────────────────
+        info = QWidget()
+        info.setFixedSize(300, 82)
+        info.setStyleSheet(f"""
+            QWidget {{
+                background-color: {BG_CARD};
+                border-bottom-left-radius: 14px;
+                border-bottom-right-radius: 14px;
+                border: none;
+            }}
+        """)
+        info_layout = QVBoxLayout(info)
+        info_layout.setContentsMargins(12, 8, 12, 10)
+        info_layout.setSpacing(5)
+
+        # File name (clean)
+        raw   = os.path.splitext(self.filename)[0]
+        name  = raw if len(raw) <= 34 else raw[:31] + "..."
+        name_lbl = QLabel(name)
+        name_lbl.setStyleSheet(f"""
+            QLabel {{
+                color: {TEXT_PRI};
+                font-size: 12px;
+                font-weight: 700;
                 background: transparent;
                 border: none;
-            }
+            }}
         """)
-        
-        # Action buttons container
-        buttons_widget = QWidget()
-        buttons_layout = QHBoxLayout(buttons_widget)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(6)
-        
-        # Play button (blue)
-        self.play_btn = QPushButton()
-        self.play_btn.setFixedSize(24, 24)
-        self.play_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4a90e2;
+        name_lbl.setToolTip(raw)
+
+        # Bottom row: date  |  action buttons
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.setContentsMargins(0, 0, 0, 0)
+
+        date_lbl = QLabel(f"  {self._extract_date()}")
+        date_lbl.setStyleSheet(f"""
+            QLabel {{
+                color: {TEXT_SEC};
+                font-size: 11px;
+                background: transparent;
                 border: none;
-                border-radius: 12px;
-            }
-            QPushButton:hover {
-                background-color: #5ba0f2;
-            }
-            QPushButton:pressed {
-                background-color: #3a80d2;
-            }
+            }}
+        """)
+
+        # ── Play button ────────────────────────────────
+        self.play_btn = QPushButton("  Play")
+        self.play_btn.setFixedHeight(26)
+        self.play_btn.setMinimumWidth(64)
+        self.play_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.play_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {BLUE};
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 0 10px;
+            }}
+            QPushButton:hover {{ background-color: #60a5fa; }}
+            QPushButton:pressed {{ background-color: {BLUE_DIM}; }}
         """)
         self.play_btn.clicked.connect(lambda: self.play_clicked.emit(self.filename))
-        
-        # Delete button (red)
-        self.delete_btn = QPushButton()
-        self.delete_btn.setFixedSize(24, 24)
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                border: none;
-                border-radius: 12px;
-            }
-            QPushButton:hover {
-                background-color: #f75c4c;
-            }
-            QPushButton:pressed {
-                background-color: #d73c2c;
-            }
+
+        # ── Delete button ──────────────────────────────
+        self.del_btn = QPushButton("  Delete")
+        self.del_btn.setFixedHeight(26)
+        self.del_btn.setMinimumWidth(64)
+        self.del_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.del_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {BG_RAISED};
+                color: {ACCENT};
+                border: 1px solid {ACCENT_DIM};
+                border-radius: 6px;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 0 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {ACCENT};
+                color: white;
+                border-color: {ACCENT};
+            }}
+            QPushButton:pressed {{ background-color: {ACCENT_DIM}; }}
         """)
-        self.delete_btn.clicked.connect(lambda: self.delete_clicked.emit(self.filename))
-        
-        buttons_layout.addWidget(self.play_btn)
-        buttons_layout.addWidget(self.delete_btn)
-        
-        bottom_layout.addWidget(self.date_label)
-        bottom_layout.addStretch()
-        bottom_layout.addWidget(buttons_widget)
-        
-        info_layout.addWidget(self.name_label)
-        info_layout.addWidget(bottom_row)
-        
-        layout.addWidget(self.thumbnail_widget)
-        layout.addWidget(info_widget)
-    
-    def get_clean_name(self):
-        """Get clean recording name"""
-        name = os.path.splitext(self.filename)[0]
-        # Keep the format from reference: manual_recording_171e7e57
-        return name
-    
-    def extract_date_from_filename(self):
-        """Extract date from filename"""
+        self.del_btn.clicked.connect(lambda: self.delete_clicked.emit(self.filename))
+
+        row.addWidget(date_lbl, 1)
+        row.addWidget(self.play_btn)
+        row.addWidget(self.del_btn)
+
+        info_layout.addWidget(name_lbl)
+        info_layout.addLayout(row)
+        root.addWidget(info)
+
+    def _extract_date(self):
         try:
-            # Try to extract from filename pattern
             parts = self.filename.split('_')
             if len(parts) >= 4:
                 date_part = parts[-2]
                 time_part = parts[-1].split('.')[0]
                 dt = datetime.datetime.strptime(date_part + time_part, "%Y%m%d%H%M%S")
-                return dt.strftime("%d/%m/%Y %H:%M")
-        except:
+                return dt.strftime("%d %b %Y  %H:%M")
+        except Exception:
             pass
-        
-        # Fallback to file modification time
         try:
             if os.path.exists(self.video_path):
                 ts = os.path.getmtime(self.video_path)
-                return datetime.datetime.fromtimestamp(ts).strftime("%d/%m/%Y %H:%M")
-        except:
+                return datetime.datetime.fromtimestamp(ts).strftime("%d %b %Y  %H:%M")
+        except Exception:
             pass
-        
-        return "Unknown"
-    
-    def generate_thumbnail(self):
-        """Generate thumbnail for the video"""
+        return "Unknown date"
+
+    def _generate_thumbnail(self):
         if not os.path.exists(self.video_path):
             return
-        
-        # Create thumbnails directory
         thumb_dir = "thumbnails"
-        if not os.path.exists(thumb_dir):
-            os.makedirs(thumb_dir)
-        
-        # Thumbnail path
-        thumb_name = f"{os.path.splitext(self.filename)[0]}.jpg"
+        os.makedirs(thumb_dir, exist_ok=True)
+        thumb_name  = f"{os.path.splitext(self.filename)[0]}.jpg"
         self.thumbnail_path = os.path.join(thumb_dir, thumb_name)
-        
-        # Check if thumbnail already exists
         if os.path.exists(self.thumbnail_path):
-            self.load_thumbnail()
+            self._load_thumbnail()
             return
-        
-        # Generate thumbnail in background thread
-        self.thumb_thread = ThumbnailGeneratorThread(self.video_path, self.thumbnail_path)
-        self.thumb_thread.thumbnail_ready.connect(self.on_thumbnail_ready)
-        self.thumb_thread.start()
-    
+        self._thumb_thread = ThumbnailGeneratorThread(self.video_path, self.thumbnail_path)
+        self._thumb_thread.thumbnail_ready.connect(self._on_thumbnail_ready)
+        self._thumb_thread.start()
+
     @pyqtSlot(str, str)
-    def on_thumbnail_ready(self, video_path, thumbnail_path):
-        """Handle thumbnail generation completion"""
-        if video_path == self.video_path:
-            self.load_thumbnail()
-    
-    def load_thumbnail(self):
-        """Load the generated thumbnail"""
+    def _on_thumbnail_ready(self, vp, tp):
+        if vp == self.video_path:
+            self._load_thumbnail()
+
+    def _load_thumbnail(self):
         if self.thumbnail_path and os.path.exists(self.thumbnail_path):
-            pixmap = QPixmap(self.thumbnail_path)
-            if not pixmap.isNull():
-                # Scale to fit the thumbnail area
-                scaled_pixmap = pixmap.scaled(
-                    320, 180,
-                    Qt.KeepAspectRatioByExpanding,
-                    Qt.SmoothTransformation
-                )
-                self.thumbnail_label.setPixmap(scaled_pixmap)
-                self.thumbnail_label.setStyleSheet("""
-                    QLabel {
-                        background-color: transparent;
-                        border: none;
-                    }
-                """)
-    
-    def mousePressEvent(self, event):
-        """Handle card click to play video"""
-        # Only emit play_clicked if the click is on the play button, not the card itself
-        if event.button() == Qt.LeftButton and event.x() >= 10 and event.x() < 290:
-            self.play_clicked.emit(self.filename)
-        super().mousePressEvent(event)
+            px = QPixmap(self.thumbnail_path)
+            if not px.isNull():
+                scaled = px.scaled(300, 168, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+                self.thumb_label.setPixmap(scaled)
+                self._placeholder.hide()
 
-class VideoTimelineWidget(QWidget):
-    """Enhanced timeline widget with thumbnail previews"""
-    
-    position_changed = pyqtSignal(int)  # Position in milliseconds
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumHeight(120)
-        self.setMaximumHeight(120)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        self.duration = 0
-        self.position = 0
-        self.thumbnails = []
-        self.thumbnail_timestamps = []
-        self.is_dragging = False
-        self.hover_position = -1
-        
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1a1d29;
-                border: 1px solid #2a2d3a;
-                border-radius: 8px;
-            }
-        """)
-        
-        self.setMouseTracking(True)
-    
-    def set_duration(self, duration_ms):
-        """Set video duration"""
-        self.duration = max(1, duration_ms)
-        self.update()
-    
-    def set_position(self, position_ms):
-        """Set current position"""
-        self.position = min(max(0, position_ms), self.duration)
-        self.update()
-    
-    def set_thumbnails(self, thumbnail_paths, timestamps):
-        """Set timeline thumbnails"""
-        self.thumbnails = []
-        self.thumbnail_timestamps = timestamps
-        
-        # Load thumbnail pixmaps
-        for path in thumbnail_paths:
-            if os.path.exists(path):
-                pixmap = QPixmap(path)
-                if not pixmap.isNull():
-                    scaled = pixmap.scaled(80, 45, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.thumbnails.append(scaled)
-                else:
-                    # Create placeholder
-                    placeholder = QPixmap(80, 45)
-                    placeholder.fill(QColor(40, 40, 40))
-                    self.thumbnails.append(placeholder)
-        
-        self.update()
-    
-    def paintEvent(self, event):
-        """Paint the timeline"""
-        if self.duration <= 0:
-            return
-        
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        width = self.width()
-        height = self.height()
-        
-        # Draw background
-        painter.fillRect(0, 0, width, height, QColor(26, 29, 41))
-        
-        # Draw thumbnails
-        if self.thumbnails:
-            thumb_count = len(self.thumbnails)
-            if thumb_count > 0:
-                spacing = (width - 20) / thumb_count
-                
-                for i, pixmap in enumerate(self.thumbnails):
-                    x = 10 + (spacing * i) + (spacing - pixmap.width()) / 2
-                    y = 10
-                    
-                    # Draw thumbnail border
-                    painter.setPen(QPen(QColor(60, 60, 60), 1))
-                    painter.drawRect(int(x) - 1, int(y) - 1, pixmap.width() + 2, pixmap.height() + 2)
-                    
-                    # Draw thumbnail
-                    painter.drawPixmap(int(x), int(y), pixmap)
-        
-        # Draw timeline track
-        track_y = height - 25
-        track_height = 4
-        track_rect = QRect(10, track_y, width - 20, track_height)
-        
-        # Background track
-        painter.fillRect(track_rect, QColor(60, 60, 60))
-        
-        # Progress track
-        if self.duration > 0:
-            progress_width = int((self.position / self.duration) * (width - 20))
-            progress_rect = QRect(10, track_y, progress_width, track_height)
-            painter.fillRect(progress_rect, QColor(231, 76, 60))
-        
-        # Position handle
-        if self.duration > 0:
-            handle_x = 10 + int((self.position / self.duration) * (width - 20))
-            handle_rect = QRect(handle_x - 6, track_y - 4, 12, 12)
-            painter.fillRect(handle_rect, QColor(231, 76, 60))
-        
-        # Hover indicator
-        if self.hover_position >= 0 and not self.is_dragging:
-            painter.setPen(QPen(QColor(255, 255, 255, 100), 1, Qt.DashLine))
-            painter.drawLine(self.hover_position, 0, self.hover_position, height - 30)
-    
-    def mousePressEvent(self, event):
-        """Handle mouse press"""
-        if event.button() == Qt.LeftButton:
-            self.is_dragging = True
-            self.seek_to_position(event.x())
-    
-    def mouseMoveEvent(self, event):
-        """Handle mouse move"""
-        self.hover_position = event.x()
-        
-        if self.is_dragging:
-            self.seek_to_position(event.x())
-        
-        self.update()
-    
-    def mouseReleaseEvent(self, event):
-        """Handle mouse release"""
-        if event.button() == Qt.LeftButton:
-            self.is_dragging = False
-    
-    def leaveEvent(self, event):
-        """Handle mouse leave"""
-        self.hover_position = -1
-        self.update()
-    
-    def seek_to_position(self, x_pos):
-        """Seek to position based on x coordinate"""
-        if self.duration <= 0:
-            return
-        
-        # Account for margins
-        effective_width = self.width() - 20
-        relative_x = max(0, min(effective_width, x_pos - 10))
-        
-        ratio = relative_x / effective_width
-        position_ms = int(ratio * self.duration)
-        
-        self.position = position_ms
-        self.position_changed.emit(position_ms)
-        self.update()
 
+# ─── Stat Pill ────────────────────────────────────────────────────────────────
+def _make_stat_pill(label: str, value: str, color: str) -> QWidget:
+    w = QWidget()
+    w.setStyleSheet(f"""
+        QWidget {{
+            background-color: {BG_RAISED};
+            border: 1px solid {BORDER};
+            border-radius: 10px;
+        }}
+    """)
+    lay = QVBoxLayout(w)
+    lay.setContentsMargins(16, 12, 16, 12)
+    lay.setSpacing(2)
+
+    val_lbl = QLabel(value)
+    val_lbl.setStyleSheet(f"color:{color}; font-size:22px; font-weight:800; background:transparent; border:none;")
+    lbl_lbl = QLabel(label)
+    lbl_lbl.setStyleSheet(f"color:{TEXT_MUTED}; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; background:transparent; border:none;")
+    lay.addWidget(val_lbl)
+    lay.addWidget(lbl_lbl)
+    return w
+
+
+# ─── Video Player ─────────────────────────────────────────────────────────────
 class InWindowVideoPlayer(QWidget):
-    """In-window video player with timeline using QMediaPlayer"""
     back_clicked = pyqtSignal()
 
     def __init__(self, video_path, parent=None):
         super().__init__(parent)
         self.video_path = video_path
         self.video_name = os.path.basename(video_path)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #0f1419;
-                color: white;
-            }
-            QPushButton {
-                background-color: #2a2d3a;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #3a3d4a;
-            }
-            QPushButton:pressed {
-                background-color: #4a4d5a;
-            }
-        """)
-        self.setup_ui()
-        self.setup_media_player()
-        self.load_video()
+        self.setStyleSheet(f"QWidget {{ background-color: {BG_DEEP}; color: {TEXT_PRI}; }}")
+        self._setup_ui()
+        self._setup_player()
+        self._load_video()
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        # Header
+    def _setup_ui(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # ── Header bar ────────────────────────────────
         header = QWidget()
-        header.setFixedHeight(60)
-        header.setStyleSheet("background-color: #1a1d29; border-bottom: 1px solid #2a2d3a;")
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(20, 10, 20, 10)
-        back_btn = QPushButton("← Back to Recordings")
-        back_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #f75c4c;
-            }
+        header.setFixedHeight(56)
+        header.setStyleSheet(f"background:{BG_HEADER}; border-bottom:1px solid {BORDER};")
+        h_lay = QHBoxLayout(header)
+        h_lay.setContentsMargins(20, 0, 20, 0)
+        h_lay.setSpacing(16)
+
+        back_btn = QPushButton("  Back to Recordings")
+        back_btn.setFixedHeight(34)
+        back_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {BG_RAISED};
+                color: {TEXT_PRI};
+                border: 1px solid {BORDER_LT};
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+                padding: 0 14px;
+            }}
+            QPushButton:hover {{ background-color: {BORDER_LT}; color:white; }}
         """)
         back_btn.clicked.connect(self.back_clicked.emit)
-        title_label = QLabel(f"Playing: {self.video_name}")
-        title_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 18px;
-                font-weight: bold;
-            }
-        """)
-        header_layout.addWidget(back_btn)
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
-        layout.addWidget(header)
-        # Video display
+
+        sep = QLabel("|")
+        sep.setStyleSheet(f"color:{BORDER_LT}; border:none; background:transparent;")
+
+        name_lbl = QLabel(self.video_name)
+        name_lbl.setStyleSheet(f"color:{TEXT_SEC}; font-size:13px; font-weight:500; background:transparent; border:none;")
+
+        h_lay.addWidget(back_btn)
+        h_lay.addWidget(sep)
+        h_lay.addWidget(name_lbl)
+        h_lay.addStretch()
+        root.addWidget(header)
+
+        # ── Video widget ──────────────────────────────
         self.video_widget = QVideoWidget()
-        self.video_widget.setStyleSheet("background-color: black;")
-        layout.addWidget(self.video_widget, 1)
-        # Controls
-        controls = QWidget()
-        controls.setFixedHeight(80)
-        controls.setStyleSheet("background-color: #1a1d29; border-top: 1px solid #2a2d3a;")
-        controls_layout = QHBoxLayout(controls)
-        controls_layout.setContentsMargins(20, 10, 20, 10)
-        self.play_pause_btn = QPushButton("▶️")
-        self.play_pause_btn.setFixedSize(50, 50)
-        self.play_pause_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
+        self.video_widget.setStyleSheet("background:black;")
+        root.addWidget(self.video_widget, 1)
+
+        # ── Controls ──────────────────────────────────
+        ctrl = QWidget()
+        ctrl.setFixedHeight(72)
+        ctrl.setStyleSheet(f"background:{BG_HEADER}; border-top:1px solid {BORDER};")
+        c_lay = QHBoxLayout(ctrl)
+        c_lay.setContentsMargins(20, 8, 20, 8)
+        c_lay.setSpacing(14)
+
+        # Play/Pause btn
+        self.play_btn = QPushButton("  Play")
+        self.play_btn.setFixedSize(80, 38)
+        self.play_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.play_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ACCENT};
                 color: white;
-                border-radius: 25px;
-                font-size: 20px;
-            }
-            QPushButton:hover {
-                background-color: #f75c4c;
-            }
+                border: none;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+            }}
+            QPushButton:hover {{ background-color: #f75656; }}
+            QPushButton:pressed {{ background-color: {ACCENT_DIM}; }}
         """)
-        self.play_pause_btn.clicked.connect(self.toggle_play_pause)
-        self.position_slider = QSlider(Qt.Horizontal)
-        self.position_slider.setRange(0, 0)
-        self.position_slider.sliderMoved.connect(self.set_position)
-        self.time_label = QLabel("00:00 / 00:00")
-        self.time_label.setStyleSheet("color: white; font-size: 14px;")
-        volume_label = QLabel("🔊")
-        volume_label.setStyleSheet("color: white; font-size: 16px;")
-        self.volume_slider = QSlider(Qt.Horizontal)
-        self.volume_slider.setRange(0, 100)
-        self.volume_slider.setValue(70)
-        self.volume_slider.setFixedWidth(100)
-        self.volume_slider.valueChanged.connect(self.set_volume)
-        controls_layout.addWidget(self.play_pause_btn)
-        controls_layout.addSpacing(20)
-        controls_layout.addWidget(self.position_slider, 1)
-        controls_layout.addSpacing(20)
-        controls_layout.addWidget(self.time_label)
-        controls_layout.addStretch()
-        controls_layout.addWidget(volume_label)
-        controls_layout.addWidget(self.volume_slider)
-        layout.addWidget(controls)
+        self.play_btn.clicked.connect(self._toggle_play_pause)
 
-    def setup_media_player(self):
-        self.media_player = QMediaPlayer(self)
-        self.media_player.setVideoOutput(self.video_widget)
-        self.media_player.stateChanged.connect(self.media_state_changed)
-        self.media_player.positionChanged.connect(self.position_changed)
-        self.media_player.durationChanged.connect(self.duration_changed)
-        self.media_player.error.connect(self.handle_error)
+        # Progress slider
+        self.pos_slider = QSlider(Qt.Horizontal)
+        self.pos_slider.setRange(0, 0)
+        self.pos_slider.sliderMoved.connect(self._set_position)
+        self.pos_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
+                background: {BORDER_LT};
+                height: 4px;
+                border-radius: 2px;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {ACCENT};
+                height: 4px;
+                border-radius: 2px;
+            }}
+            QSlider::handle:horizontal {{
+                background: white;
+                width: 14px;
+                height: 14px;
+                margin: -5px 0;
+                border-radius: 7px;
+            }}
+        """)
 
-    def load_video(self):
+        self.time_lbl = QLabel("00:00 / 00:00")
+        self.time_lbl.setStyleSheet(f"color:{TEXT_SEC}; font-size:12px; font-weight:600; background:transparent; border:none;")
+        self.time_lbl.setFixedWidth(110)
+
+        # Volume
+        vol_lbl = QLabel("Vol")
+        vol_lbl.setStyleSheet(f"color:{TEXT_MUTED}; font-size:11px; background:transparent; border:none;")
+        self.vol_slider = QSlider(Qt.Horizontal)
+        self.vol_slider.setRange(0, 100)
+        self.vol_slider.setValue(70)
+        self.vol_slider.setFixedWidth(90)
+        self.vol_slider.setStyleSheet(self.pos_slider.styleSheet())
+        self.vol_slider.valueChanged.connect(self._set_volume)
+
+        c_lay.addWidget(self.play_btn)
+        c_lay.addWidget(self.pos_slider, 1)
+        c_lay.addWidget(self.time_lbl)
+        c_lay.addWidget(vol_lbl)
+        c_lay.addWidget(self.vol_slider)
+        root.addWidget(ctrl)
+
+    def _setup_player(self):
+        self.player = QMediaPlayer(self)
+        self.player.setVideoOutput(self.video_widget)
+        self.player.stateChanged.connect(self._state_changed)
+        self.player.positionChanged.connect(self._pos_changed)
+        self.player.durationChanged.connect(self._dur_changed)
+        self.player.error.connect(self._handle_error)
+
+    def _load_video(self):
         if os.path.exists(self.video_path):
             url = QUrl.fromLocalFile(os.path.abspath(self.video_path))
-            self.media_player.setMedia(QMediaContent(url))
-            self.media_player.setVolume(self.volume_slider.value())
-            self.media_player.play()
+            self.player.setMedia(QMediaContent(url))
+            self.player.setVolume(self.vol_slider.value())
+            self.player.play()
         else:
-            QMessageBox.warning(self, "Error", f"Video file not found: {self.video_path}")
+            QMessageBox.warning(self, "Error", f"File not found:\n{self.video_path}")
 
-    def toggle_play_pause(self):
-        if self.media_player.state() == QMediaPlayer.PlayingState:
-            self.media_player.pause()
+    def _toggle_play_pause(self):
+        if self.player.state() == QMediaPlayer.PlayingState:
+            self.player.pause()
         else:
-            self.media_player.play()
+            self.player.play()
 
-    def media_state_changed(self, state):
-        if state == QMediaPlayer.PlayingState:
-            self.play_pause_btn.setText("⏸️")
-        else:
-            self.play_pause_btn.setText("▶️")
+    def _state_changed(self, state):
+        self.play_btn.setText("  Pause" if state == QMediaPlayer.PlayingState else "  Play")
 
-    def position_changed(self, position):
-        self.position_slider.setValue(position)
-        self.update_time_label()
+    def _pos_changed(self, pos):
+        self.pos_slider.setValue(pos)
+        self._update_time()
 
-    def duration_changed(self, duration):
-        self.position_slider.setRange(0, duration)
-        self.update_time_label()
+    def _dur_changed(self, dur):
+        self.pos_slider.setRange(0, dur)
+        self._update_time()
 
-    def set_position(self, position):
-        self.media_player.setPosition(position)
+    def _set_position(self, pos):
+        self.player.setPosition(pos)
 
-    def set_volume(self, volume):
-        self.media_player.setVolume(volume)
+    def _set_volume(self, vol):
+        self.player.setVolume(vol)
 
-    def update_time_label(self):
-        position = self.media_player.position()
-        duration = self.media_player.duration()
-        pos_str = self.format_time(position)
-        dur_str = self.format_time(duration)
-        self.time_label.setText(f"{pos_str} / {dur_str}")
+    def _update_time(self):
+        pos = self.player.position()
+        dur = self.player.duration()
+        self.time_lbl.setText(f"{self._fmt(pos)} / {self._fmt(dur)}")
 
-    def format_time(self, ms):
-        seconds = int(ms / 1000)
-        minutes = seconds // 60
-        seconds %= 60
-        return f"{minutes:02d}:{seconds:02d}"
+    @staticmethod
+    def _fmt(ms):
+        s = int(ms / 1000)
+        return f"{s//60:02d}:{s%60:02d}"
 
-    def handle_error(self, error):
-        error_string = self.media_player.errorString()
-        QMessageBox.critical(self, "Media Error", f"Error: {error_string}")
+    def _handle_error(self, _):
+        QMessageBox.critical(self, "Playback Error", self.player.errorString())
 
     def closeEvent(self, event):
-        self.media_player.stop()
+        self.player.stop()
         super().closeEvent(event)
 
+
+# ─── Main Page ────────────────────────────────────────────────────────────────
 class EnhancedRecordingsPage(QWidget):
-    """Enhanced recordings page matching the reference design"""
-    
     back_to_cameras = pyqtSignal()
-    
+
+    # Global stylesheet for the page
+    _PAGE_STYLE = f"""
+        QWidget {{
+            background-color: {BG_DEEP};
+            color: {TEXT_PRI};
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }}
+        QScrollArea {{
+            background: transparent;
+            border: none;
+        }}
+        QScrollBar:vertical {{
+            background: {BG_RAISED};
+            width: 8px;
+            border-radius: 4px;
+            border: none;
+        }}
+        QScrollBar::handle:vertical {{
+            background: {BORDER_LT};
+            border-radius: 4px;
+            min-height: 30px;
+        }}
+        QScrollBar::handle:vertical:hover {{
+            background: {TEXT_MUTED};
+        }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+            height: 0px;
+        }}
+    """
+
     def __init__(self, drive_manager=None):
         super().__init__()
-        self.drive_manager = drive_manager
+        self.drive_manager        = drive_manager
         self.current_video_player = None
-        
-        # Set the exact styling from reference
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #0f1419;
-                color: white;
-            }
-            QPushButton {
-                background-color: #2a2d3a;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #3a3d4a;
-            }
-            QScrollArea {
+        self.setStyleSheet(self._PAGE_STYLE)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        self.stack = QStackedWidget()
+        self.list_page = self._build_list_page()
+        self.stack.addWidget(self.list_page)
+        root.addWidget(self.stack)
+
+        self.refresh_recordings_list()
+
+    def _build_list_page(self):
+        page = QWidget()
+        lay  = QVBoxLayout(page)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+        # ── Top header bar ─────────────────────────────────────────────────────
+        header = QWidget()
+        header.setFixedHeight(64)
+        header.setStyleSheet(f"background:{BG_HEADER}; border-bottom:1px solid {BORDER};")
+        h_lay = QHBoxLayout(header)
+        h_lay.setContentsMargins(24, 0, 24, 0)
+        h_lay.setSpacing(12)
+
+        # Dot accent + title
+        dot = QLabel()
+        dot.setFixedSize(10, 10)
+        dot.setStyleSheet(f"background:{ACCENT}; border-radius:5px; border:none;")
+
+        title = QLabel("Recordings")
+        title.setStyleSheet(f"""
+            QLabel {{
+                color: {TEXT_PRI};
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
                 background: transparent;
                 border: none;
-            }
-            QScrollBar:vertical {
-                background-color: #2a2d3a;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #4a4d5a;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #5a5d6a;
-            }
+            }}
         """)
-        
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Setup the recordings page UI"""
-        # Main layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-        
-        # Stacked widget for switching between recordings list and video player
-        self.stacked_widget = QStackedWidget()
-        
-        # Recordings list page
-        self.recordings_list_page = self.create_recordings_list_page()
-        self.stacked_widget.addWidget(self.recordings_list_page)
-        
-        main_layout.addWidget(self.stacked_widget)
-        
-        # Load recordings
-        self.refresh_recordings_list()
-    
-    def create_recordings_list_page(self):
-        """Create the recordings list page"""
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
-        
-        # Header matching reference design
-        header_layout = QHBoxLayout()
-        
-        # Title
-        title = QLabel("Recordings")
-        title.setStyleSheet("""
-            QLabel {
-                font-size: 28px;
-                font-weight: bold;
-                color: white;
-                padding: 0px;
-                margin: 0px;
-            }
+
+        h_lay.addWidget(dot)
+        h_lay.addSpacing(4)
+        h_lay.addWidget(title)
+        h_lay.addStretch()
+
+        # Refresh button
+        ref_btn = QPushButton("  Refresh")
+        ref_btn.setFixedHeight(34)
+        ref_btn.setMinimumWidth(100)
+        ref_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        ref_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {BG_RAISED};
+                color: {TEXT_SEC};
+                border: 1px solid {BORDER_LT};
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 0 14px;
+            }}
+            QPushButton:hover {{ background-color: {BORDER_LT}; color: white; }}
         """)
-        
-        # Back button matching reference
-        back_btn = QPushButton("← Back to Cameras")
-        back_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
+        ref_btn.clicked.connect(self.refresh_recordings_list)
+
+        # Back button
+        back_btn = QPushButton("  Back to Cameras")
+        back_btn.setFixedHeight(34)
+        back_btn.setMinimumWidth(140)
+        back_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ACCENT};
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-                max-width: 200px;
-            }
-            QPushButton:hover {
-                background-color: #f75c4c;
-            }
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+                padding: 0 16px;
+            }}
+            QPushButton:hover {{ background-color: #f75656; }}
+            QPushButton:pressed {{ background-color: {ACCENT_DIM}; }}
         """)
         back_btn.clicked.connect(self.back_to_cameras.emit)
-        
-        header_layout.addWidget(title)
-        header_layout.addStretch()
-        header_layout.addWidget(back_btn)
-        
-        layout.addLayout(header_layout)
-        
-        # Recordings grid
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
-        self.recordings_container = QWidget()
-        self.recordings_layout = QGridLayout(self.recordings_container)
-        self.recordings_layout.setContentsMargins(0, 0, 0, 0)
-        self.recordings_layout.setSpacing(20)
-        self.recordings_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        
-        self.scroll_area.setWidget(self.recordings_container)
-        layout.addWidget(self.scroll_area, 1)
-        
-        # Bottom controls
-        bottom_layout = QHBoxLayout()
-        
-        refresh_btn = QPushButton("🔄 Refresh")
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4a90e2;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #5ba0f2;
-            }
-        """)
-        refresh_btn.clicked.connect(self.refresh_recordings_list)
-        
-        bottom_layout.addStretch()
-        bottom_layout.addWidget(refresh_btn)
-        
-        layout.addLayout(bottom_layout)
-        
+
+        h_lay.addWidget(ref_btn)
+        h_lay.addWidget(back_btn)
+        lay.addWidget(header)
+
+        # ── Stat bar ───────────────────────────────────────────────────────────
+        self.stat_bar = QWidget()
+        self.stat_bar.setStyleSheet(f"background:{BG_DEEP}; border-bottom:1px solid {BORDER};")
+        sb_lay = QHBoxLayout(self.stat_bar)
+        sb_lay.setContentsMargins(24, 14, 24, 14)
+        sb_lay.setSpacing(12)
+
+        self.stat_total = _make_stat_pill("Total Recordings", "0", TEXT_PRI)
+        self.stat_size  = _make_stat_pill("Folder Size", "0 MB", BLUE)
+        self.stat_today = _make_stat_pill("Today", "0", GREEN)
+        for w in [self.stat_total, self.stat_size, self.stat_today]:
+            sb_lay.addWidget(w)
+        sb_lay.addStretch()
+        lay.addWidget(self.stat_bar)
+
+        # ── Grid scroll area ───────────────────────────────────────────────────
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.grid_container = QWidget()
+        self.grid_container.setStyleSheet(f"background:{BG_DEEP}; border:none;")
+        self.grid_layout = QGridLayout(self.grid_container)
+        self.grid_layout.setContentsMargins(24, 24, 24, 24)
+        self.grid_layout.setSpacing(18)
+        self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.scroll.setWidget(self.grid_container)
+        lay.addWidget(self.scroll, 1)
+
         return page
-    
+
+    # ─── Data ─────────────────────────────────────────────────────────────────
     def refresh_recordings_list(self):
-        """Refresh the recordings list"""
-        # Clear existing cards
-        for i in reversed(range(self.recordings_layout.count())):
-            child = self.recordings_layout.itemAt(i).widget()
-            if child:
-                child.setParent(None)
-        
-        # Get recordings
-        recordings_dir = "recordings"
-        if not os.path.exists(recordings_dir):
-            os.makedirs(recordings_dir)
-        
-        files = [f for f in os.listdir(recordings_dir) 
-                if f.lower().endswith(('.mp4', '.avi', '.mkv', '.mov'))]
-        
+        # Clear grid
+        for i in reversed(range(self.grid_layout.count())):
+            w = self.grid_layout.itemAt(i).widget()
+            if w:
+                w.setParent(None)
+
+        rec_dir = "recordings"
+        os.makedirs(rec_dir, exist_ok=True)
+        files = sorted(
+            [f for f in os.listdir(rec_dir) if f.lower().endswith(('.mp4','.avi','.mkv','.mov'))],
+            reverse=True
+        )
+
+        # Update stats
+        self._update_stats(files, rec_dir)
+
         if not files:
-            # Show empty state
-            empty_label = QLabel("No recordings found.")
-            empty_label.setAlignment(Qt.AlignCenter)
-            empty_label.setStyleSheet("""
-                QLabel {
-                    color: #8a8a8a;
-                    font-size: 18px;
-                    padding: 50px;
-                }
+            empty = QLabel("No recordings found")
+            empty.setAlignment(Qt.AlignCenter)
+            empty.setStyleSheet(f"""
+                QLabel {{
+                    color: {TEXT_MUTED};
+                    font-size: 16px;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    background: transparent;
+                    border: none;
+                    padding: 80px;
+                }}
             """)
-            self.recordings_layout.addWidget(empty_label, 0, 0, 1, 3)
-        else:
-            # Add recording cards in grid (3 columns)
-            cols = 3
-            for idx, filename in enumerate(sorted(files, reverse=True)):
-                row = idx // cols
-                col = idx % cols
-                
-                card = ModernRecordingCard(filename)
-                card.play_clicked.connect(self.play_recording)
-                card.delete_clicked.connect(self.delete_recording)
-                
-                self.recordings_layout.addWidget(card, row, col)
-    
+            self.grid_layout.addWidget(empty, 0, 0, 1, 3)
+            return
+
+        COLS = 3
+        for idx, fn in enumerate(files):
+            card = ModernRecordingCard(fn)
+            card.play_clicked.connect(self.play_recording)
+            card.delete_clicked.connect(self.delete_recording)
+            self.grid_layout.addWidget(card, idx // COLS, idx % COLS)
+
+    def _update_stats(self, files, rec_dir):
+        total = len(files)
+        size_bytes = sum(
+            os.path.getsize(os.path.join(rec_dir, f))
+            for f in files if os.path.exists(os.path.join(rec_dir, f))
+        )
+        size_mb = size_bytes / (1024 * 1024)
+        size_str = f"{size_mb:.1f} MB" if size_mb < 1024 else f"{size_mb/1024:.2f} GB"
+
+        today = datetime.date.today().strftime("%Y%m%d")
+        today_count = sum(1 for f in files if today in f)
+
+        # Refresh stat pill values
+        def _set_val(pill, val):
+            lbl = pill.layout().itemAt(0).widget()
+            if lbl:
+                lbl.setText(str(val))
+
+        _set_val(self.stat_total, total)
+        _set_val(self.stat_size,  size_str)
+        _set_val(self.stat_today, today_count)
+
+    # ─── Actions ──────────────────────────────────────────────────────────────
     def play_recording(self, filename):
-        """Play a recording"""
         video_path = os.path.join("recordings", filename)
-        
         if not os.path.exists(video_path):
-            QMessageBox.warning(self, "File Not Found", 
-                              f"Recording file not found:\n{filename}")
+            QMessageBox.warning(self, "Not Found", f"Recording not found:\n{filename}")
             self.refresh_recordings_list()
             return
-        
-        # Create in-window video player
+
         self.current_video_player = InWindowVideoPlayer(video_path)
-        self.current_video_player.back_clicked.connect(self.return_to_recordings_list)
-        
-        # Add to stacked widget and switch to it
-        self.stacked_widget.addWidget(self.current_video_player)
-        self.stacked_widget.setCurrentWidget(self.current_video_player)
-    
-    def return_to_recordings_list(self):
-        """Return to recordings list from video player"""
+        self.current_video_player.back_clicked.connect(self._return_to_list)
+        self.stack.addWidget(self.current_video_player)
+        self.stack.setCurrentWidget(self.current_video_player)
+
+    def _return_to_list(self):
         if self.current_video_player:
-            # Stop the video player
-            if hasattr(self.current_video_player, 'media_player'):
-                self.current_video_player.media_player.stop()
-            
-            # Remove from stacked widget
-            self.stacked_widget.removeWidget(self.current_video_player)
+            if hasattr(self.current_video_player, 'player'):
+                self.current_video_player.player.stop()
+            self.stack.removeWidget(self.current_video_player)
             self.current_video_player.setParent(None)
             self.current_video_player = None
-        
-        # Switch back to recordings list
-        self.stacked_widget.setCurrentWidget(self.recordings_list_page)
-        
-        # Refresh the list
+        self.stack.setCurrentWidget(self.list_page)
         self.refresh_recordings_list()
-    
+
     def delete_recording(self, filename):
-        """Delete a recording"""
         reply = QMessageBox.question(
             self, "Delete Recording",
-            f"Are you sure you want to delete this recording?\n\n{filename}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            f"Permanently delete this recording?\n\n{filename}",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
-        
         if reply == QMessageBox.Yes:
             try:
-                video_path = os.path.join("recordings", filename)
-                if os.path.exists(video_path):
-                    os.remove(video_path)
-                
-                # Also remove thumbnail if exists
-                thumb_path = os.path.join("thumbnails", f"{os.path.splitext(filename)[0]}.jpg")
-                if os.path.exists(thumb_path):
-                    os.remove(thumb_path)
-                
+                vp = os.path.join("recordings", filename)
+                if os.path.exists(vp):
+                    os.remove(vp)
+                tp = os.path.join("thumbnails", f"{os.path.splitext(filename)[0]}.jpg")
+                if os.path.exists(tp):
+                    os.remove(tp)
                 self.refresh_recordings_list()
-                
             except Exception as e:
-                QMessageBox.warning(self, "Error", 
-                                  f"Could not delete recording:\n{str(e)}")
+                QMessageBox.warning(self, "Error", f"Could not delete:\n{e}")
 
-# At the end of the file, alias EnhancedRecordingsPage as RecordingsPage for compatibility
+
+# Alias for backwards compatibility
 RecordingsPage = EnhancedRecordingsPage

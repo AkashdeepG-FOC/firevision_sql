@@ -60,20 +60,8 @@
     "type": "ip_camera"
   },
   {
-    "id": "4",
-    "name": "camera_one",
-    "source": "0",
-    "type": "webcam"
-  },
-  {
     "id": "5",
     "name": "Basement",
-    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
-    "type": "ip_camera"
-  },
-  {
-    "id": "6",
-    "name": "store room",
     "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
     "type": "ip_camera"
   },
@@ -82,5 +70,29 @@
     "name": "Camera A",
     "source": "1.1.1.1",
     "type": "ip_camera"
+  },
+  {
+    "id": "4",
+    "name": "camera_one",
+    "source": "0",
+    "type": "webcam"
+  },
+  {
+    "id": "6",
+    "name": "store room",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
+  },
+  {
+    "id": "8",
+    "name": "wardroom",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
+  },
+  {
+    "id": "11",
+    "name": "one",
+    "source": 0,
+    "type": "webcam"
   }
 ]

@@ -3490,49 +3490,61 @@ class PersistentMainWindow(QMainWindow):
             print(f"✅ Event recording completed for camera {camera_id}")
 
     def send_fire_alert_to_backend(self, camera_id, camera_name, alert_type, confidence):
-        """Send fire detection alert to backend server and mobile app"""
+        """Send fire detection alert to backend server and mobile app in a background thread to prevent UI stutter"""
         try:
             if hasattr(self.camera_manager, 'fire_smoke_detector'):
                 detector = self.camera_manager.fire_smoke_detector
                 if camera_id in detector.last_detections:
                     frame, detections, alert_info = detector.last_detections[camera_id]
                     
-                    # Use comprehensive notification manager to send to both backend and mobile
-                    results = self.notification_manager.send_comprehensive_fire_alert(
-                        camera_id=camera_id,
-                        camera_name=camera_name,
-                        frame=frame,
-                        detections=detections,
-                        alert_info=alert_info
-                    )
+                    # Create a deep copy of the frame to avoid race conditions when the thread processes it
+                    frame_copy = frame.copy()
                     
-                    # Log results
-                    backend_status = "✅" if results['backend'] else "❌"
-                    mobile_status = "✅" if results['mobile'] else "❌"
-                    print(f"🔥 Fire alert notification results:")
-                    print(f"   Backend: {backend_status}")
-                    print(f"   Mobile App: {mobile_status}")
+                    # Define a background worker function
+                    def background_worker(cam_id, cam_name, f_copy, dets, info):
+                        try:
+                            start_time = time.time()
+                            print(f"🧵 [Thread] Starting async fire alert for {cam_name}...")
+                            
+                            # 1. Send comprehensive notification (mobile + backend v2)
+                            results = self.notification_manager.send_comprehensive_fire_alert(
+                                camera_id=cam_id,
+                                camera_name=cam_name,
+                                frame=f_copy,
+                                detections=dets,
+                                alert_info=info
+                            )
+                            
+                            # 2. Send to original backend (backend v1)
+                            alert_id = self.fire_detection_backend.create_fire_alert(
+                                camera_id=cam_id,
+                                camera_name=cam_name,
+                                frame=f_copy,
+                                detections=dets,
+                                alert_info=info
+                            )
+                            
+                            duration = time.time() - start_time
+                            print(f"✅ [Thread] Async fire alert finished in {duration:.2f}s (results: {results})")
+                            
+                        except Exception as e:
+                            print(f"❌ [Thread] Error in background fire alert: {e}")
+                            
+                    # Start the background thread
+                    threading.Thread(
+                        target=background_worker, 
+                        args=(camera_id, camera_name, frame_copy, detections, alert_info),
+                        daemon=True
+                    ).start()
                     
-                    # Also send to original backend for compatibility
-                    alert_id = self.fire_detection_backend.create_fire_alert(
-                        camera_id=camera_id,
-                        camera_name=camera_name,
-                        frame=frame,
-                        detections=detections,
-                        alert_info=alert_info
-                    )
-                    
-                    if alert_id:
-                        print(f"✅ Fire alert sent to backend: {alert_id}")
-                    else:
-                        print(f"❌ Failed to send fire alert to backend")
+                    print(f"🚀 Fire alert processing offloaded to background thread for camera {camera_id}")
                 else:
                     print(f"⚠️ No detection data available for camera {camera_id}")
             else:
                 print(f"⚠️ Fire/smoke detector not available")
                 
         except Exception as e:
-            print(f"❌ Error sending fire alert: {e}")
+            print(f"❌ Error initiating fire alert: {e}")
 
     def on_fire_alert_created(self, alert_id, status):
         """Handle fire alert creation success"""

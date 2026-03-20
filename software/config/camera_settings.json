@@ -543,7 +543,7 @@
     "alert_zones": [],
     "privacy_masks": []
   },
-  "4": {
+  "5": {
     "resolution": "1920x1080",
     "fps": 30,
     "brightness": 50,
@@ -559,7 +559,23 @@
     "alert_zones": [],
     "privacy_masks": []
   },
-  "5": {
+  "7": {
+    "resolution": "1920x1080",
+    "fps": 30,
+    "brightness": 50,
+    "contrast": 50,
+    "saturation": 50,
+    "exposure": "auto",
+    "white_balance": "auto",
+    "night_mode": false,
+    "motion_detection": true,
+    "audio_enabled": false,
+    "recording_quality": "high",
+    "retention_days": 30,
+    "alert_zones": [],
+    "privacy_masks": []
+  },
+  "4": {
     "resolution": "1920x1080",
     "fps": 30,
     "brightness": 50,
@@ -591,7 +607,23 @@
     "alert_zones": [],
     "privacy_masks": []
   },
-  "7": {
+  "8": {
+    "resolution": "1920x1080",
+    "fps": 30,
+    "brightness": 50,
+    "contrast": 50,
+    "saturation": 50,
+    "exposure": "auto",
+    "white_balance": "auto",
+    "night_mode": false,
+    "motion_detection": true,
+    "audio_enabled": false,
+    "recording_quality": "high",
+    "retention_days": 30,
+    "alert_zones": [],
+    "privacy_masks": []
+  },
+  "11": {
     "resolution": "1920x1080",
     "fps": 30,
     "brightness": 50,
