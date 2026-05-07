@@ -8,6 +8,8 @@ class BackendClient:
         self.base_url = base_url
         self.token = None
         self.user_data = None
+        self.session = requests.Session()
+        self.session.headers.update({"Content-Type": "application/json"})
 
     def login(self, username, password) -> bool:
         try:
@@ -16,13 +18,16 @@ class BackendClient:
             # But let's check auth.py. "user = db.query(models.User).filter(models.User.email == form_data.username).first()"
             # So "username" param sent to token endpoint corresponds to email in DB.
             
-            response = requests.post(
+            response = self.session.post(
                 f"{self.base_url}/api/auth/token",
-                data={"username": username, "password": password}
+                data={"username": username, "password": password},
+                headers={"Content-Type": "application/x-www-form-urlencoded"} # Override default for login
             )
             if response.status_code == 200:
                 data = response.json()
                 self.token = data.get("access_token")
+                # Update session headers with token
+                self.session.headers.update({"Authorization": f"Bearer {self.token}"})
                 # Fetch user details
                 self.fetch_current_user()
                 return True
@@ -33,6 +38,7 @@ class BackendClient:
             return False
 
     def get_headers(self):
+        # We now use self.session.headers, but keeping this for compatibility if needed elsewhere
         headers = {}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
@@ -40,9 +46,8 @@ class BackendClient:
 
     def fetch_current_user(self):
         try:
-            response = requests.get(
-                f"{self.base_url}/api/users/me",
-                headers=self.get_headers()
+            response = self.session.get(
+                f"{self.base_url}/api/users/me"
             )
             if response.status_code == 200:
                 self.user_data = response.json()
@@ -59,10 +64,9 @@ class BackendClient:
                 "name": name,
                 "role": role
             }
-            response = requests.post(
+            response = self.session.post(
                 f"{self.base_url}/api/users/",
-                json=payload,
-                headers=self.get_headers()
+                json=payload
             )
             return response.status_code == 200
         except Exception as e:
@@ -72,9 +76,8 @@ class BackendClient:
     # --- Cameras ---
     def get_cameras(self) -> List[Dict]:
         try:
-            response = requests.get(
-                f"{self.base_url}/api/cameras/",
-                headers=self.get_headers()
+            response = self.session.get(
+                f"{self.base_url}/api/cameras/"
             )
             if response.status_code == 200:
                 return response.json()
@@ -101,11 +104,10 @@ class BackendClient:
                 "status": status,
                 "assigned_user_id": user_id
             }
-            print(f"DEBUG: Sending camera create payload: {payload}, Header: {self.get_headers()}")
-            response = requests.post(
+            print(f"DEBUG: Sending camera create payload: {payload}")
+            response = self.session.post(
                 f"{self.base_url}/api/cameras/",
-                json=payload,
-                headers=self.get_headers()
+                json=payload
             )
             if response.status_code == 200:
                 print(f"✅ Camera created: {response.json()}")
@@ -121,9 +123,8 @@ class BackendClient:
     # --- Users ---
     def get_users(self) -> List[Dict]:
         try:
-            response = requests.get(
-                f"{self.base_url}/api/users/",
-                headers=self.get_headers()
+            response = self.session.get(
+                f"{self.base_url}/api/users/"
             )
             if response.status_code == 200:
                 return response.json()
@@ -134,10 +135,9 @@ class BackendClient:
 
     def update_user(self, user_id: int, data: Dict) -> bool:
         try:
-            response = requests.put(
+            response = self.session.put(
                 f"{self.base_url}/api/users/{user_id}",
-                json=data,
-                headers=self.get_headers()
+                json=data
             )
             return response.status_code == 200
         except Exception as e:
@@ -146,9 +146,8 @@ class BackendClient:
 
     def delete_user(self, user_id: int) -> bool:
         try:
-            response = requests.delete(
-                f"{self.base_url}/api/users/{user_id}",
-                headers=self.get_headers()
+            response = self.session.delete(
+                f"{self.base_url}/api/users/{user_id}"
             )
             return response.status_code == 200
         except Exception as e:
@@ -172,10 +171,9 @@ class BackendClient:
                 "footage_path": footage_path,
                 "status": "active"
             }
-            response = requests.post(
+            response = self.session.post(
                 f"{self.base_url}/api/alerts/",
-                json=payload,
-                headers=self.get_headers()
+                json=payload
             )
             if response.status_code == 200:
                 return response.json()
@@ -202,10 +200,9 @@ class BackendClient:
             if not payload:
                 return True
 
-            response = requests.patch(
+            response = self.session.patch(
                 f"{self.base_url}/api/alerts/{alert_id}",
-                json=payload,
-                headers=self.get_headers()
+                json=payload
             )
             return response.status_code == 200
         except Exception as e:

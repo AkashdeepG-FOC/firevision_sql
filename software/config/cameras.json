@@ -90,9 +90,27 @@
     "type": "ip_camera"
   },
   {
-    "id": "11",
-    "name": "one",
-    "source": 0,
+    "id": "12",
+    "name": "ttt",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Camera_Video_of_Fire_at_WLNE_720P.mp4",
+    "type": "video_file"
+  },
+  {
+    "id": "14",
+    "name": "tttr",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
+  },
+  {
+    "id": "13",
+    "name": "ttttt",
+    "source": "0",
     "type": "webcam"
+  },
+  {
+    "id": "15",
+    "name": "three",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Camera_Video_of_Fire_at_WLNE_720P.mp4",
+    "type": "video_file"
   }
 ]

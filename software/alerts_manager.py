@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer, QThread
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem,
                              QComboBox, QDateEdit, QLineEdit, QHeaderView,
@@ -49,6 +49,43 @@ class Alert:
     resolved_at: Optional[float] = None
     backend_id: Optional[int] = None
 
+class BackendSyncWorker(QThread):
+    """Worker thread for background backend synchronization"""
+    sync_finished = pyqtSignal(str, bool, object) # alert_id, success, backend_data
+
+    def __init__(self, alert_id, camera_id, alert_type, confidence, severity, description, footage_path):
+        super().__init__()
+        self.alert_id = alert_id
+        self.camera_id = camera_id
+        self.alert_type = alert_type
+        self.confidence = confidence
+        self.severity = severity
+        self.description = description
+        self.footage_path = footage_path
+
+    def run(self):
+        try:
+            # Sync to backend
+            # Need integer camera ID for backend
+            b_camera_id = int(self.camera_id) if self.camera_id.isdigit() else 1
+            
+            backend_alert = backend_client.create_alert(
+                camera_id=b_camera_id,
+                alert_type=self.alert_type,
+                confidence=self.confidence,
+                severity=self.severity,
+                description=self.description,
+                footage_path=self.footage_path
+            )
+            
+            if backend_alert and 'id' in backend_alert:
+                self.sync_finished.emit(self.alert_id, True, backend_alert)
+            else:
+                self.sync_finished.emit(self.alert_id, False, None)
+        except Exception as e:
+            print(f"⚠️ Async backend sync failed: {e}")
+            self.sync_finished.emit(self.alert_id, False, None)
+
 class AlertsManager(QObject):
     """Manager for handling all types of alerts and detections"""
     
@@ -74,6 +111,9 @@ class AlertsManager(QObject):
         self.alerts: List[Alert] = []
         self.load_alerts_from_file()
         
+        # Keep track of active sync workers to prevent garbage collection
+        self.active_workers = []
+        
         # Start cleanup timer
         self.cleanup_timer = QTimer()
         self.cleanup_timer.timeout.connect(self.cleanup_old_alerts)
@@ -83,6 +123,11 @@ class AlertsManager(QObject):
         """Load alerts from JSON file"""
         try:
             if os.path.exists(self.alerts_file):
+                # Check if file is empty
+                if os.path.getsize(self.alerts_file) == 0:
+                    self.alerts = []
+                    return
+                    
                 with open(self.alerts_file, 'r') as f:
                     alerts_data = json.load(f)
                 
@@ -125,6 +170,9 @@ class AlertsManager(QObject):
             for alert in self.alerts:
                 alerts_data.append(asdict(alert))
             
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.alerts_file), exist_ok=True)
+            
             with open(self.alerts_file, 'w') as f:
                 json.dump(alerts_data, f, indent=2)
                 
@@ -134,7 +182,7 @@ class AlertsManager(QObject):
     def create_alert(self, camera_id: str, camera_name: str, alert_type: str,
                     severity: str, confidence: float, description: str,
                     footage_path: str = None, metadata: Dict = None) -> str:
-        """Create a new alert"""
+        """Create a new alert (Asynchronous)"""
         try:
             alert_id = f"{alert_type}_{camera_id}_{int(time.time())}"
             
@@ -155,40 +203,55 @@ class AlertsManager(QObject):
             # Add to list
             self.alerts.append(alert)
             
-            # Save to file
+            # Save to file (Synchronous but local I/O is usually fast)
+            # In a very high-load system, this could also be moved to background
             self.save_alerts_to_file()
             
-            # Sync to backend
-            try:
-                # Need integer camera ID for backend
-                # If camera_id is not an int, we might need a mapping or try to cast
-                b_camera_id = int(camera_id) if camera_id.isdigit() else 1 # Fallback to 1 if not digit
-                
-                backend_alert = backend_client.create_alert(
-                    camera_id=b_camera_id,
-                    alert_type=alert_type,
-                    confidence=confidence,
-                    severity=severity,
-                    description=description,
-                    footage_path=footage_path
-                )
-                if backend_alert and 'id' in backend_alert:
-                    alert.backend_id = backend_alert['id']
-                    self.save_alerts_to_file() # Save again with backend_id
-                    print(f"🔗 Alert synced to backend with ID: {alert.backend_id}")
-            except Exception as be:
-                print(f"⚠️ Failed to sync alert to backend: {be}")
-
-            # Emit signal
+            # Emit initial signal for UI updates (e.g. showing alert card)
             self.alert_created.emit(alert)
             
-            print(f"🚨 Alert created: {alert_id}")
+            # --- Start Background Sync ---
+            worker = BackendSyncWorker(
+                alert_id=alert_id,
+                camera_id=camera_id,
+                alert_type=alert_type,
+                confidence=confidence,
+                severity=severity,
+                description=description,
+                footage_path=footage_path
+            )
+            worker.sync_finished.connect(self._handle_sync_finished)
+            worker.finished.connect(lambda w=worker: self._cleanup_worker(w))
+            
+            self.active_workers.append(worker)
+            worker.start()
+            
+            print(f"🚨 Local alert created, sync started in background: {alert_id}")
             return alert_id
             
         except Exception as e:
             print(f"❌ Error creating alert: {e}")
             return None
-    
+
+    def _handle_sync_finished(self, alert_id, success, backend_data):
+        """Handle completion of background sync"""
+        if success and backend_data:
+            # Update alert with backend ID
+            for alert in self.alerts:
+                if alert.id == alert_id:
+                    alert.backend_id = backend_data.get('id')
+                    self.save_alerts_to_file()
+                    print(f"🔗 Alert {alert_id} synced to backend with ID: {alert.backend_id}")
+                    self.alert_updated.emit(alert)
+                    break
+        else:
+            print(f"⚠️ Alert {alert_id} failed to sync to backend")
+
+    def _cleanup_worker(self, worker):
+        """Remove worker from active list after it finishes"""
+        if worker in self.active_workers:
+            self.active_workers.remove(worker)
+
     def save_alert(self, alert: Alert):
         """Update an existing alert"""
         try:
@@ -198,6 +261,7 @@ class AlertsManager(QObject):
                     self.alerts[i] = alert
                     break
             else:
+                return # Not found
                 # If not found, append (should rely on create_alert mostly)
                 self.alerts.append(alert)
             

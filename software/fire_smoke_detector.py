@@ -23,6 +23,44 @@ from workers.base_worker import BaseWorker, WorkerStatus
 from core.confidence_engine import TemporalConfidenceEngine, AlertLevel, DetectionEvidence
 
 
+class SnapshotWorker(threading.Thread):
+    """Thread for background snapshot saving"""
+    def __init__(self, snapshot_dir, camera_id, frame, metadata, timestamp_str, alert_level, cleanup_callback):
+        super().__init__()
+        self.snapshot_dir = snapshot_dir
+        self.camera_id = camera_id
+        self.frame = frame.copy() if frame is not None else None
+        self.metadata = metadata
+        self.timestamp_str = timestamp_str
+        self.alert_level = alert_level
+        self.cleanup_callback = cleanup_callback
+
+    def run(self):
+        try:
+            camera_snapshot_dir = self.snapshot_dir / self.camera_id
+            camera_snapshot_dir.mkdir(exist_ok=True)
+            
+            # Save frame
+            if self.frame is not None:
+                frame_filename = f"{self.timestamp_str}_{self.alert_level}.jpg"
+                frame_path = camera_snapshot_dir / frame_filename
+                cv2.imwrite(str(frame_path), self.frame)
+            
+            # Save metadata
+            metadata_filename = f"{self.timestamp_str}_{self.alert_level}.json"
+            metadata_path = camera_snapshot_dir / metadata_filename
+            with open(metadata_path, 'w') as f:
+                json.dump(self.metadata, f, indent=2)
+                
+            print(f"📸 Async evidence snapshot captured for camera {self.camera_id}")
+            
+            # Run cleanup
+            if self.cleanup_callback:
+                self.cleanup_callback(self.camera_id)
+                
+        except Exception as e:
+            print(f"⚠️ Failed to capture async evidence snapshot for camera {self.camera_id}: {e}")
+
 class FireSmokeDetector(QObject):
     def send_fire_alert_to_mobile(self, screenshot_path, alert_type="fire", mobile_ip=None, port=None):
         """Send fire alert screenshot and info to mobile app via HTTP POST."""
@@ -700,31 +738,13 @@ class FireSmokeDetector(QObject):
     
     def _capture_evidence_snapshot(self, camera_id, frame, detections, alert_level, confidence, is_night):
         """
-        Capture evidence snapshot for WARNING or CRITICAL alerts.
-        
-        Args:
-            camera_id: Camera identifier
-            frame: Annotated frame with detections
-            detections: List of detection dicts
-            alert_level: Alert level string (WARNING/CRITICAL)
-            confidence: Temporal confidence score
-            is_night: Whether night mode was active
+        Capture evidence snapshot for WARNING or CRITICAL alerts (Asynchronous).
         """
         try:
-            # Create camera-specific directory
-            camera_snapshot_dir = self.snapshot_dir / camera_id
-            camera_snapshot_dir.mkdir(exist_ok=True)
-            
-            # Generate timestamp-based filename
             timestamp = datetime.now()
             timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             
-            # Save frame
-            frame_filename = f"{timestamp_str}_{alert_level}.jpg"
-            frame_path = camera_snapshot_dir / frame_filename
-            cv2.imwrite(str(frame_path), frame)
-            
-            # Prepare metadata
+            # Prepare metadata (do this in caller thread to ensure data consistency)
             summary = self.confidence_engine.get_detection_summary(camera_id)
             metadata = {
                 "camera_id": camera_id,
@@ -746,19 +766,21 @@ class FireSmokeDetector(QObject):
                 "rules_applied": ["bbox_size", "movement_consistency"]
             }
             
-            # Save metadata JSON
-            metadata_filename = f"{timestamp_str}_{alert_level}.json"
-            metadata_path = camera_snapshot_dir / metadata_filename
-            with open(metadata_path, 'w') as f:
-                json.dump(metadata, f, indent=2)
-            
-            print(f"📸 Evidence snapshot captured: {frame_path.name} (level={alert_level}, conf={confidence:.2f})")
-            
-            # Cleanup old snapshots
-            self._cleanup_old_snapshots(camera_id)
+            # Start background worker
+            worker = SnapshotWorker(
+                self.snapshot_dir, 
+                camera_id, 
+                frame, 
+                metadata, 
+                timestamp_str, 
+                alert_level,
+                self._cleanup_old_snapshots
+            )
+            worker.daemon = True
+            worker.start()
             
         except Exception as e:
-            print(f"⚠️ Failed to capture evidence snapshot for camera {camera_id}: {e}")
+            print(f"⚠️ Failed to initiate evidence snapshot for camera {camera_id}: {e}")
     
     def _cleanup_old_snapshots(self, camera_id):
         """
