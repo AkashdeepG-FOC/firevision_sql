@@ -112,5 +112,23 @@
     "name": "three",
     "source": "D:/giit/firevision_sql/software/videos/Security_Camera_Video_of_Fire_at_WLNE_720P.mp4",
     "type": "video_file"
+  },
+  {
+    "id": "16",
+    "name": "twooo",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
+  },
+  {
+    "id": "17",
+    "name": "threee",
+    "source": "D:/giit/firevision_sql/software/videos/Security_Ca",
+    "type": "ip_camera"
+  },
+  {
+    "id": "18",
+    "name": "one",
+    "source": "0",
+    "type": "webcam"
   }
 ]

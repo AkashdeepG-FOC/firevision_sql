@@ -11,30 +11,38 @@ class BackendClient:
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
 
-    def login(self, username, password) -> bool:
+    def login(self, username, password) -> str:
         try:
-            # Login expects username/password form data (OAuth2)
-            # For our backend, username field maps to email in the user model if we look at auth.py
-            # But let's check auth.py. "user = db.query(models.User).filter(models.User.email == form_data.username).first()"
-            # So "username" param sent to token endpoint corresponds to email in DB.
-            
             response = self.session.post(
                 f"{self.base_url}/api/auth/token",
                 data={"username": username, "password": password},
-                headers={"Content-Type": "application/x-www-form-urlencoded"} # Override default for login
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=5
             )
             if response.status_code == 200:
                 data = response.json()
                 self.token = data.get("access_token")
-                # Update session headers with token
                 self.session.headers.update({"Authorization": f"Bearer {self.token}"})
-                # Fetch user details
                 self.fetch_current_user()
-                return True
+                return "success"
+            elif response.status_code in [401, 403]:
+                return "invalid_credentials"
             print(f"Login failed: {response.status_code} - {response.text}")
-            return False
+            return "error"
+        except requests.exceptions.RequestException as e:
+            print(f"Login connection failed (offline): {e}")
+            return "offline"
         except Exception as e:
-            print(f"Login connection failed: {e}")
+            print(f"Login error: {e}")
+            return "error"
+
+    def test_connection(self) -> bool:
+        """Test if the backend API is reachable."""
+        try:
+            # Ping health endpoint
+            response = self.session.get(f"{self.base_url}/health", timeout=3)
+            return response.status_code == 200
+        except Exception:
             return False
 
     def get_headers(self):
@@ -110,12 +118,12 @@ class BackendClient:
                 json=payload
             )
             if response.status_code == 200:
-                print(f"✅ Camera created: {response.json()}")
+                print(f"Camera created: {response.json()}")
                 return response.json()
             else:
-                print(f"❌ Create camera failed: {response.status_code} - {response.text}")
+                print(f"Create camera failed: {response.status_code} - {response.text}")
         except Exception as e:
-            print(f"❌ Error creating camera: {e}")
+            print(f"Error creating camera: {e}")
             import traceback
             traceback.print_exc()
         return None
@@ -177,7 +185,7 @@ class BackendClient:
             )
             if response.status_code == 200:
                 return response.json()
-            print(f"❌ Create alert failed: {response.status_code} - {response.text}")
+            print(f"Create alert failed: {response.status_code} - {response.text}")
             return None
         except Exception as e:
             print(f"Error creating alert: {e}")

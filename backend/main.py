@@ -47,6 +47,10 @@ async def serve_dashboard():
 def read_root():
     return {"message": "Welcome to FireVision API"}
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "FireVision API"}
+
 import traceback
 from fastapi import Request
 from fastapi.responses import JSONResponse

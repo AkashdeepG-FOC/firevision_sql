@@ -30,6 +30,15 @@ except ImportError as e:
     print("Warning: System Profiler not available:", e)
     profiler = None
 
+# Local API and Sync Services
+try:
+    from local_api.main import start_local_api_server
+    from sync.sync_manager import SyncManager
+except ImportError as e:
+    print("Warning: Local API / Sync not available:", e)
+    start_local_api_server = None
+    SyncManager = None
+
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -1930,6 +1939,16 @@ class PersistentMainWindow(QMainWindow):
         # Start background initialization (DEFERRED)
         self.init_worker.start()
 
+        # Start Status Worker for Real-Time Status Indicator
+        try:
+            from workers.status_worker import SystemStatusWorker
+            self.status_worker = SystemStatusWorker()
+            if hasattr(self, 'system_status_indicator'):
+                self.status_worker.status_updated.connect(self.system_status_indicator.set_status)
+            self.status_worker.start()
+        except Exception as e:
+            print(f"Failed to start status worker: {e}")
+
         # Test backend connection asynchronously (don't block UI)
         QTimer.singleShot(1000, self.test_backend_connection)
 
@@ -2207,6 +2226,18 @@ class PersistentMainWindow(QMainWindow):
         title_label = QLabel("Fire Guard - AI powered Fire And People detection System")
         title_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold;")
         title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        title_layout.addWidget(title_label)
+
+        # Add System Status Indicator
+        try:
+            from ui.status_indicator import SystemStatusIndicator
+            self.system_status_indicator = SystemStatusIndicator(self)
+            title_layout.addWidget(self.system_status_indicator)
+            
+            # Add some spacing
+            title_layout.addSpacing(10)
+        except Exception as e:
+            print(f"Failed to load status indicator: {e}")
 
         # Button style for icon buttons
         btn_style = """
@@ -3830,6 +3861,19 @@ def main():
     app.setOrganizationName("FOC Security")
     
     app.setQuitOnLastWindowClosed(False)
+
+    # Start Local API Background Service
+    if start_local_api_server:
+        print("Starting Local API Service on port 8001...")
+        start_local_api_server(port=8001)
+
+    # Start Sync Manager Background Service
+    if SyncManager:
+        print("Starting Sync Manager...")
+        sync_mgr = SyncManager()
+        sync_mgr.start()
+        # Keep a reference to prevent garbage collection
+        app.sync_mgr = sync_mgr
 
     # Show initial splash screen
     splash = SplashScreen()
