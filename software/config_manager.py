@@ -292,19 +292,20 @@ class ConfigManager:
         pass
 
     def authenticate_user(self, username: str, password: str) -> bool:
-        """Authenticate user credentials via Local API"""
+        """Authenticate user credentials via Backend API (port 8000)"""
         try:
-            response = requests.post(
-                "http://127.0.0.1:8001/api/local/auth/login",
-                json={"username": username, "password": password},
-                timeout=5
-            )
-            if response.status_code == 200:
+            result = backend_client.login(username, password)
+            if result == "success":
                 self._current_user = username
                 return True
-            return False
+            elif result == "invalid_credentials":
+                print(f"Login failed: invalid credentials for '{username}'")
+                return False
+            else:
+                print(f"Login result: {result}")
+                return False
         except Exception as e:
-            print(f"Error connecting to Local API: {e}")
+            print(f"Error during authentication: {e}")
             return False
 
     def set_current_user(self, username: Optional[str]):

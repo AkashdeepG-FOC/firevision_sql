@@ -2,15 +2,17 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..core import database
+from ..core.logger import get_logger
 from ..models import models
 from ..schemas import schemas
 from .users import get_current_user
 
 router = APIRouter()
+log = get_logger("firevision.cameras")
 
 @router.post("/", response_model=schemas.Camera)
 def create_camera(camera: schemas.CameraCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
-    print(f"DEBUG: Received camera create request for user {current_user.email}: {camera.dict()}")
+    log.info(f"Camera create request – user={current_user.email} payload={camera.dict()}")
     camera_data = camera.dict()
     # Ensure the camera is linked to the logged-in user
     camera_data["user_id"] = current_user.id
@@ -52,6 +54,7 @@ def delete_camera(camera_id: int, db: Session = Depends(database.get_db), curren
     if current_user.role != "admin" and db_camera.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this camera")
     
+    log.warning(f"Camera deleted – camera_id={camera_id} by user={current_user.email}")
     db.delete(db_camera)
     db.commit()
     return {"detail": "Camera deleted"}

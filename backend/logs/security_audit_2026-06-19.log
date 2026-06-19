@@ -1,0 +1,7 @@
+2026-06-19 13:50:13.775 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-19 13:50:13.929 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-19 13:54:11.733 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-19 13:55:49.282 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-19 14:03:46.430 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-19 14:03:46.554 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-19 14:03:52.878 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=20akashdeep10a@gmai.com

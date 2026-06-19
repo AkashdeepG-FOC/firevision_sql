@@ -27,7 +27,7 @@ class Camera(Base):
     camera_name = Column(String(100))
     location = Column(String(255))
     ip_address = Column(String(50))
-    status = Column(String(20), default="inactive") # active, inactive
+    status = Column(String(20), default="inactive", index=True) # active, inactive
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -43,13 +43,13 @@ class Alert(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     camera_id = Column(Integer, ForeignKey("cameras.id"))
-    alert_type = Column(String(50)) # fire, smoke, etc.
+    alert_type = Column(String(50), index=True) # fire, smoke, etc.
     severity = Column(String(50), default="low")
     confidence_score = Column(Float)
     description = Column(String(255))
-    status = Column(String(50), default="active") # active, acknowledged, resolved, false_alarm
+    status = Column(String(50), default="active", index=True) # active, acknowledged, resolved, false_alarm
     footage_path = Column(String(255), nullable=True)
-    detected_at = Column(DateTime(timezone=True), server_default=func.now())
+    detected_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
 

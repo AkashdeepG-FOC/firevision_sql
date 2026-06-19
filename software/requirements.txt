@@ -9,6 +9,8 @@ websocket-client>=1.2.0
 ultralytics>=8.0.0
 torch>=1.9.0
 torchvision>=0.10.0
+onnxruntime>=1.15.0
+
 
 # PyQt5 additional modules
 PyQt5-QtWebEngine>=5.15.0
