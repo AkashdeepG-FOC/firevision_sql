@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-${imports}
+${context.get('imports', '')}
 
 # revision identifiers, used by Alembic.
 revision: str = ${repr(up_revision)}
@@ -19,8 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    ${upgrades if upgrades else "pass"}
+    ${context.get('upgrades', 'pass')}
 
 
 def downgrade() -> None:
-    ${downgrades if downgrades else "pass"}
+    ${context.get('downgrades', 'pass')}

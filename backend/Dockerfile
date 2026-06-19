@@ -4,8 +4,6 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libmariadb-dev \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -15,10 +13,6 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 FROM python:3.11-slim as runner
 
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libmariadb3 \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /root/.local /root/.local
 COPY . /app

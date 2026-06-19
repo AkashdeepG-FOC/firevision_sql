@@ -3,7 +3,7 @@ from typing import List
 import os
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "mysql+mysqlconnector://root:@localhost:3306/firevision"
+    DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/firevision"
     SECRET_KEY: str = "your_secret_key_change_me_in_production"
     REFRESH_TOKEN_SECRET_KEY: str = "your_refresh_secret_key_change_me_in_production"
     ALGORITHM: str = "HS256"

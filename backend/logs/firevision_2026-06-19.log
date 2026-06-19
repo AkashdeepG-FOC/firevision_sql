@@ -210,3 +210,62 @@
 2026-06-19 14:05:25.505 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.6ms] ip=127.0.0.1
 2026-06-19 14:05:32.560 | DEBUG    | backend.main:health_check:123 – Health check requested
 2026-06-19 14:05:32.561 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-19 14:44:01.160 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 14:44:03.229 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 14:44:03.230 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 14:44:03.250 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 14:44:03.254 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 14:54:01.715 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 14:54:03.619 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 14:54:03.620 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 14:54:03.639 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 14:54:03.641 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 14:54:03.642 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 14:54:04.898 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 14:54:04.899 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 14:54:04.916 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 14:54:04.917 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 14:59:29.364 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 14:59:30.647 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 14:59:30.648 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 14:59:30.663 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 14:59:30.666 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 15:04:29.695 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 15:04:30.997 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 15:04:30.999 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 15:04:31.015 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 15:04:31.017 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 15:14:57.765 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-19 15:28:18.701 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 15:28:18.703 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 15:28:18.703 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 15:28:18.705 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 15:28:58.033 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:28:58.033 | INFO     | backend.main:log_requests:79 – GET /health → 200 [22.1ms] ip=127.0.0.1
+2026-06-19 15:28:58.522 | WARNING  | backend.main:log_requests:79 – GET /api/users/ → 401 [3.4ms] ip=127.0.0.1
+2026-06-19 15:28:58.523 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-19 15:28:58.590 | WARNING  | backend.main:log_requests:79 – GET /api/cameras/ → 401 [2.4ms] ip=127.0.0.1
+2026-06-19 15:28:58.590 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-19 15:29:03.039 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:03.039 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-19 15:29:10.108 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:10.109 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-19 15:29:11.122 | INFO     | backend.routers.auth:login_for_access_token:23 – Login attempt – username='admin' ip=127.0.0.1
+2026-06-19 15:29:13.577 | SUCCESS  | backend.routers.auth:login_for_access_token:50 – Login successful – user=admin ip=127.0.0.1
+2026-06-19 15:29:13.577 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 user=admin
+2026-06-19 15:29:13.578 | INFO     | backend.main:log_requests:79 – POST /api/auth/token → 200 [2459.1ms] ip=127.0.0.1
+2026-06-19 15:29:14.667 | INFO     | backend.main:log_requests:79 – GET /api/users/me → 200 [1086.3ms] ip=127.0.0.1
+2026-06-19 15:29:15.112 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:15.113 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-19 15:29:15.152 | INFO     | backend.main:log_requests:79 – GET /api/cameras/ → 200 [389.0ms] ip=127.0.0.1
+2026-06-19 15:29:20.117 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:20.117 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-19 15:29:25.122 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:25.123 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.6ms] ip=127.0.0.1
+2026-06-19 15:29:32.200 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-19 15:29:32.201 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-19 15:29:37.859 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-19 15:29:37.861 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-19 15:29:37.861 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-19 15:29:37.865 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-19 15:29:37.896 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.

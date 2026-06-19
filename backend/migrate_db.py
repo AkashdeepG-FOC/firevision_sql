@@ -5,25 +5,41 @@ def migrate():
     engine = create_engine(settings.DATABASE_URL)
     with engine.connect() as conn:
         try:
-            # Check if columns exist (MySQL specific query for brevity, or just try-except)
-            print("Attempting to rename assigned_user_id to user_id in 'cameras' table...")
-            conn.execute(text("ALTER TABLE cameras CHANGE COLUMN assigned_user_id user_id INT"))
-            conn.commit()
-            print("Successfully renamed column.")
+            # Check if columns exist using standard ANSI SQL information_schema
+            print("Checking if 'user_id' already exists in 'cameras' table...")
+            check_user_id_query = text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'cameras' AND column_name = 'user_id'"
+            )
+            result = conn.execute(check_user_id_query).fetchone()
+            
+            if result:
+                print("Column 'user_id' already exists.")
+                return
+                
+            # Check if assigned_user_id exists to rename it
+            print("Checking if 'assigned_user_id' exists in 'cameras' table...")
+            check_assigned_query = text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'cameras' AND column_name = 'assigned_user_id'"
+            )
+            assigned_result = conn.execute(check_assigned_query).fetchone()
+            
+            if assigned_result:
+                print("Attempting to rename assigned_user_id to user_id in 'cameras' table...")
+                conn.execute(text("ALTER TABLE cameras RENAME COLUMN assigned_user_id TO user_id"))
+                conn.commit()
+                print("Successfully renamed column.")
+            else:
+                print("Adding 'user_id' column...")
+                conn.execute(text(
+                    "ALTER TABLE cameras ADD COLUMN user_id INT, "
+                    "ADD CONSTRAINT fk_cameras_user FOREIGN KEY (user_id) REFERENCES users(id)"
+                ))
+                conn.commit()
+                print("Successfully added 'user_id' column and foreign key constraint.")
         except Exception as e:
-            print(f"Note: {e}")
-            print("Column might already be renamed or another issue occurred. Checking if user_id exists...")
-            try:
-                # If the above failed, maybe user_id already exists from a fresh create_all
-                result = conn.execute(text("SHOW COLUMNS FROM cameras LIKE 'user_id'")).fetchone()
-                if result:
-                    print("Column 'user_id' already exists.")
-                else:
-                    print("Adding 'user_id' column...")
-                    conn.execute(text("ALTER TABLE cameras ADD COLUMN user_id INT, ADD FOREIGN KEY (user_id) REFERENCES users(id)"))
-                    conn.commit()
-            except Exception as e2:
-                print(f"Migration error: {e2}")
+            print(f"Migration error: {e}")
 
 if __name__ == "__main__":
     migrate()
