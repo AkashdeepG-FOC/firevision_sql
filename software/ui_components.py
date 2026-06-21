@@ -11,7 +11,8 @@ try:
                                  QStackedWidget, QLineEdit, QComboBox, QFileDialog,
                                  QMessageBox, QFrame, QSplitter, QCheckBox, QSlider,
                                  QScrollArea, QTableWidget, QTableWidgetItem, QHeaderView,
-                                 QDialog, QFormLayout, QSpinBox, QGroupBox, QTextEdit)
+                                 QDialog, QFormLayout, QSpinBox, QGroupBox, QTextEdit,
+                                 QListWidget, QListWidgetItem, QSizePolicy)
     from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QPainter, QPainterPath
     from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, QSize, QDateTime
 except Exception as e:
@@ -23,6 +24,22 @@ try:
     from enhanced_camera_manager import EnhancedCameraManager
 except:
     print("EnhancedCameraManager failed to import in ui_components")
+
+try:
+    from ui.map_widget import LightweightMapWebView
+except ImportError:
+    try:
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+        class LightweightMapWebView(QWebEngineView):
+            def load_cameras_map(self, camera_locations=None):
+                self.setHtml("<p style='color:#888;text-align:center;margin-top:40px;'>Map unavailable</p>")
+    except ImportError:
+        class LightweightMapWebView(QWidget):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+            def load_cameras_map(self, camera_locations=None):
+                pass
 
 class StorageChoiceDialog(QDialog):
     """Dialog to choose storage location for recordings"""
@@ -180,10 +197,14 @@ class EnhancedCameraWidget(QLabel):
         self.setObjectName("cameraCard")
         self.setStyleSheet("""
             QLabel#cameraCard {
-                background-color: #383838;
-                border: none;
+                background-color: rgba(10, 10, 10, 0.7);
+                border: 1px solid rgba(0, 255, 255, 0.15);
                 border-radius: 20px;
                 color: white;
+            }
+            QLabel#cameraCard:hover {
+                border: 1px solid rgba(0, 255, 255, 0.4);
+                background-color: rgba(15, 15, 15, 0.85);
             }
         """)
         self.setAlignment(Qt.AlignCenter)
@@ -212,9 +233,32 @@ class EnhancedCameraWidget(QLabel):
             }
         """)
 
-        # Hide older elements
-        self.name_label = QLabel(self)
-        self.name_label.hide()
+        # AI ACTIVE Label (bottom-left)
+        self.ai_active_label = QLabel("● AI ACTIVE", self)
+        self.ai_active_label.setGeometry(15, 195, 100, 22)
+        self.ai_active_label.setStyleSheet("""
+            QLabel {
+                color: #00ff66;
+                font-size: 11px;
+                font-weight: bold;
+                background: transparent;
+            }
+        """)
+
+        # Camera Name label (bottom-right)
+        self.name_label = QLabel(self.camera_name, self)
+        self.name_label.setGeometry(200, 195, 145, 22)
+        self.name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.name_label.setStyleSheet("""
+            QLabel {
+                color: rgba(255, 255, 255, 0.8);
+                font-size: 11px;
+                font-weight: bold;
+                background: transparent;
+            }
+        """)
+
+        # Keep other variables hidden to avoid reference errors
         self.status_label = QLabel(self)
         self.status_label.hide()
 
@@ -314,18 +358,8 @@ class EnhancedCameraWidget(QLabel):
             print(f"Error updating frame for camera {self.camera_id}: {e}")
     
     def update_detection_frame(self, frame, detections, people_count):
-        """Update with people detection results - but show clean frame in grid"""
+        """Update with people detection results"""
         try:
-            # Store the original frame (not the annotated detection frame)
-            # The 'frame' parameter here is the annotated frame, but we need the original
-            # We'll use the current_frame if it exists, otherwise use the frame
-            if self.current_frame is not None:
-                # Keep the original frame for display
-                display_frame = self.current_frame.copy()
-            else:
-                # If no original frame exists, use the provided frame but remove annotations
-                display_frame = frame.copy()
-            
             self.people_count = people_count
             self.people_detection_enabled = True
             
@@ -336,26 +370,15 @@ class EnhancedCameraWidget(QLabel):
             else:
                 self.people_indicator.hide()
             
-            # IMPORTANT: Show clean frame without detection overlays in main grid
-            # Use the original frame, not the annotated detection frame
-            self.display_frame(display_frame)
+            # Show the annotated frame in grid (with bounding boxes)
+            self.display_frame(frame)
                 
         except Exception as e:
             print(f"Error updating detection frame for camera {self.camera_id}: {e}")
     
     def update_fire_smoke_frame(self, frame, detections, alert_info):
-        """Update with fire/smoke detection results - but show clean frame in grid"""
+        """Update with fire/smoke detection results"""
         try:
-            # Store the original frame (not the annotated detection frame)
-            # The 'frame' parameter here is the annotated frame, but we need the original
-            # We'll use the current_frame if it exists, otherwise use the frame
-            if self.current_frame is not None:
-                # Keep the original frame for display
-                display_frame = self.current_frame.copy()
-            else:
-                # If no original frame exists, use the provided frame but remove annotations
-                display_frame = frame.copy()
-            
             self.fire_smoke_detection_enabled = True
             
             # Check if there are fire/smoke detections
@@ -400,8 +423,8 @@ class EnhancedCameraWidget(QLabel):
                 # Update widget border to indicate alert
                 self.setStyleSheet("""
                     QLabel#cameraCard {
-                        background-color: #383838;
-                        border: 3px solid #ff0000;
+                        background-color: rgba(10, 10, 10, 0.8);
+                        border: 2px solid #ff3333;
                         border-radius: 20px;
                         color: white;
                     }
@@ -411,7 +434,7 @@ class EnhancedCameraWidget(QLabel):
                 self.live_indicator.setText("ALERT")
                 self.live_indicator.setStyleSheet("""
                     QLabel {
-                        background-color: #ff0000;
+                        background-color: #ff3333;
                         color: white;
                         font-size: 13px;
                         font-weight: bold;
@@ -425,8 +448,8 @@ class EnhancedCameraWidget(QLabel):
                 # Reset border and live indicator
                 self.setStyleSheet("""
                     QLabel#cameraCard {
-                        background-color: #383838;
-                        border: none;
+                        background-color: rgba(10, 10, 10, 0.7);
+                        border: 1px solid rgba(0, 255, 255, 0.15);
                         border-radius: 20px;
                         color: white;
                     }
@@ -443,9 +466,8 @@ class EnhancedCameraWidget(QLabel):
                     }
                 """)
             
-            # IMPORTANT: Show clean frame without detection overlays in main grid
-            # Use the original frame, not the annotated detection frame
-            self.display_frame(display_frame)
+            # Show the annotated frame in grid
+            self.display_frame(frame)
                 
         except Exception as e:
             print(f"Error updating fire/smoke frame for camera {self.camera_id}: {e}")
@@ -496,6 +518,7 @@ class EnhancedCameraWidget(QLabel):
             
             # Ensure overlays stay on top
             self.name_label.raise_()
+            self.ai_active_label.raise_()
             self.status_label.raise_()
             self.live_indicator.raise_()
             self.people_indicator.raise_()
@@ -1907,3 +1930,245 @@ class AddCameraDialog(QDialog):
     def get_camera_data(self):
         """Get the camera data"""
         return getattr(self, 'camera_data', None)
+
+
+class NetworkHealthGraph(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.phase = 0.0
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_wave)
+        self.timer.start(50)  # 20 FPS
+        self.setMinimumHeight(120)
+        self.setMaximumHeight(160)
+        
+    def update_wave(self):
+        self.phase += 0.05
+        self.update()
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Draw background grid
+        grid_pen = QPen(QColor(0, 255, 255, 15), 1, Qt.DashLine)
+        painter.setPen(grid_pen)
+        grid_size = 20
+        for x in range(0, w, grid_size):
+            painter.drawLine(x, 0, x, h)
+        for y in range(0, h, grid_size):
+            painter.drawLine(0, y, w, y)
+            
+        # Draw 3 overlapping sine waves
+        # Wave 1: Electric Cyan
+        path1 = QPainterPath()
+        path1.moveTo(0, h // 2)
+        for x in range(0, w, 2):
+            y = h // 2 + int(20 * np.sin(0.03 * x + self.phase)) + int(4 * np.cos(0.07 * x - self.phase))
+            path1.lineTo(x, y)
+        pen1 = QPen(QColor(0, 255, 240, 160), 2)
+        painter.setPen(pen1)
+        painter.drawPath(path1)
+        
+        # Wave 2: Neon Green
+        path2 = QPainterPath()
+        path2.moveTo(0, h // 2)
+        for x in range(0, w, 2):
+            y = h // 2 + int(12 * np.sin(0.04 * x - self.phase * 1.3)) + int(6 * np.sin(0.01 * x + self.phase * 0.7))
+            path2.lineTo(x, y)
+        pen2 = QPen(QColor(0, 255, 127, 100), 1.5)
+        painter.setPen(pen2)
+        painter.drawPath(path2)
+        
+        # Wave 3: Dark Blue Fill
+        path3 = QPainterPath()
+        path3.moveTo(0, h)
+        for x in range(0, w, 4):
+            y = h - 20 - int(8 * np.sin(0.02 * x + self.phase * 1.5)) - int(3 * np.sin(0.08 * x))
+            path3.lineTo(x, y)
+        path3.lineTo(w, h)
+        path3.closeSubpath()
+        painter.fillPath(path3, QBrush(QColor(0, 255, 255, 12)))
+        
+        # Draw some bar graphs at the bottom (equalizer look)
+        num_bars = 28
+        bar_width = max(2, w // num_bars - 2)
+        painter.setPen(Qt.NoPen)
+        for i in range(num_bars):
+            bx = i * (bar_width + 2) + 5
+            noise = np.sin(i * 0.5 + self.phase * 2) * np.cos(i * 0.3)
+            bh = int((abs(noise) * 20) + 5)
+            if bh > 18:
+                bar_color = QColor(255, 51, 51, 180)
+            else:
+                bar_color = QColor(0, 255, 240, 140)
+            painter.setBrush(QBrush(bar_color))
+            painter.drawRect(bx, h - bh, bar_width, bh)
+
+
+class TelemetryPanel(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedWidth(310)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: rgba(10, 10, 10, 0.6);
+                border: 1px solid rgba(0, 255, 255, 0.15);
+                border-radius: 16px;
+                color: #ffffff;
+            }
+            QLabel {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(10)
+
+        self.cloud_status_label = QLabel("Connecting...")
+        self.cloud_status_label.setAlignment(Qt.AlignCenter)
+        self.cloud_status_label.setFixedHeight(34)
+        self.cloud_status_label.setStyleSheet("""
+            QLabel {
+                background-color: rgba(100, 100, 100, 0.8);
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: bold;
+                border-radius: 17px;
+                padding: 0 12px;
+            }
+        """)
+        layout.addWidget(self.cloud_status_label)
+
+        self.map_view = LightweightMapWebView()
+        self.map_view.setFixedSize(286, 180)
+        self.map_view.setStyleSheet(
+            "border: 1px solid rgba(0, 255, 255, 0.1); border-radius: 8px; background-color: #f5f5f5;"
+        )
+        layout.addWidget(self.map_view)
+
+        le_header = QLabel("Latest Events")
+        le_header.setStyleSheet("font-size: 13px; font-weight: bold; color: #00ffcc; margin-top: 5px;")
+        layout.addWidget(le_header)
+
+        self.event_list = QListWidget()
+        self.event_list.setMinimumHeight(180)
+        self.event_list.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.event_list.setStyleSheet("""
+            QListWidget {
+                background-color: rgba(5, 5, 5, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 3px;
+            }
+            QListWidget::item {
+                background: transparent;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+                padding: 2px;
+            }
+        """)
+        self.event_list.setSelectionMode(QListWidget.NoSelection)
+        layout.addWidget(self.event_list, 1)
+
+        self.populate_initial_events()
+        self.map_view.load_cameras_map({})
+
+    def set_cloud_status(self, data):
+        mode = data.get("mode", "offline")
+        if mode == "online":
+            bg = "rgba(34, 197, 94, 0.9)"
+            text = "Connected to Cloud"
+        elif mode == "syncing":
+            pending = data.get("sync_pending", 0)
+            bg = "rgba(234, 179, 8, 0.9)"
+            text = f"Synchronizing Events ({pending})"
+        elif mode == "limited":
+            bg = "rgba(249, 115, 22, 0.9)"
+            text = "Limited Connectivity"
+        else:
+            bg = "rgba(239, 68, 68, 0.9)"
+            text = "Offline Mode Active"
+
+        self.cloud_status_label.setText(text)
+        self.cloud_status_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {bg};
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: bold;
+                border-radius: 17px;
+                padding: 0 12px;
+            }}
+        """)
+
+    def update_camera_map(self, camera_locations):
+        self.map_view.load_cameras_map(camera_locations or {})
+
+    def populate_initial_events(self):
+        events = [
+            ("Sensors", "Camera is scenery of facility.", QColor("#00ff66"), False),
+            ("Sensors", "PERSON [AI] powered has detected.", QColor("#00ff66"), False),
+            ("Alert", "POSSIBLE HEAT SOURCE detected.", QColor("#ffcc00"), True),
+            ("Alert", "Person on powered Fire detected.", QColor("#ff3333"), True),
+            ("Sensors", "Camera is scenery of facility.", QColor("#00ff66"), False),
+        ]
+        for tag, desc, color, highlight in events:
+            self.add_event_item(tag, desc, color, highlight=highlight)
+
+    def add_event_item(self, tag, desc, color, highlight=False):
+        item_widget = QWidget()
+        bg = "rgba(255, 255, 255, 0.06)" if highlight else "transparent"
+        item_widget.setStyleSheet(f"background: {bg}; border: none; border-radius: 6px;")
+
+        item_layout = QHBoxLayout(item_widget)
+        item_layout.setContentsMargins(6, 5, 6, 5)
+        item_layout.setSpacing(8)
+
+        if tag == "Alert":
+            icon = "⚠"
+            icon_color = color.name()
+        else:
+            icon = "●"
+            icon_color = color.name()
+
+        icon_label = QLabel(icon)
+        icon_label.setFixedWidth(14)
+        icon_label.setStyleSheet(f"color: {icon_color}; font-size: 11px; background: transparent;")
+
+        tag_label = QLabel(tag)
+        tag_label.setFixedWidth(52)
+        tag_label.setStyleSheet(f"color: {color.name()}; font-size: 10px; font-weight: bold; background: transparent;")
+
+        desc_label = QLabel(desc)
+        desc_label.setStyleSheet("color: #d0d0d0; font-size: 10px; background: transparent;")
+        desc_label.setWordWrap(True)
+
+        item_layout.addWidget(icon_label)
+        item_layout.addWidget(tag_label)
+        item_layout.addWidget(desc_label, 1)
+
+        list_item = QListWidgetItem()
+        list_item.setSizeHint(item_widget.sizeHint())
+
+        self.event_list.insertItem(0, list_item)
+        self.event_list.setItemWidget(list_item, item_widget)
+
+        if self.event_list.count() > 20:
+            self.event_list.takeItem(self.event_list.count() - 1)
+
+    def add_event(self, event_type, description):
+        event_lower = event_type.lower()
+        if any(k in event_lower for k in ("fire", "alert", "critical", "smoke", "heat")):
+            color = QColor("#ff3333")
+            tag = "Alert"
+            highlight = True
+        else:
+            color = QColor("#00ff66")
+            tag = "Sensors"
+            highlight = False
+        self.add_event_item(tag, description, color, highlight=highlight)

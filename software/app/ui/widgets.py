@@ -269,3 +269,26 @@ class CameraLoaderThread(QThread):
         except Exception as e:
             print(f"❌ CameraLoaderThread error: {e}")
             self.finished_loading.emit()
+
+
+class SingleCameraLoaderThread(QThread):
+    """Thread for adding a single new camera with success/failure signals"""
+    camera_loaded = pyqtSignal(dict)        # emits camera_data dict on success
+    camera_failed = pyqtSignal(str, str)    # camera_id, error_message on failure
+
+    def __init__(self, camera_data, camera_manager, parent=None):
+        super().__init__(parent)
+        self.camera_data = camera_data
+        self.camera_manager = camera_manager
+
+    def run(self):
+        camera_id = self.camera_data.get('id', 'unknown')
+        try:
+            # Attempt to start the stream via camera manager if the method exists
+            if self.camera_manager and hasattr(self.camera_manager, 'start_camera'):
+                self.camera_manager.start_camera(camera_id, self.camera_data)
+            self.msleep(200)  # Small delay so skeleton is visible
+            self.camera_loaded.emit(self.camera_data)
+        except Exception as e:
+            print(f"❌ SingleCameraLoaderThread error for {camera_id}: {e}")
+            self.camera_failed.emit(camera_id, str(e))

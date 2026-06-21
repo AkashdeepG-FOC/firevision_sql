@@ -76,6 +76,113 @@ class LightweightMapWebView(QWebEngineView):
         """
         self.setHtml(html)
 
+    def load_cameras_map(self, camera_locations=None):
+        """Load a compact read-only Leaflet map with camera markers."""
+        locations = []
+        for camera_id, loc in (camera_locations or {}).items():
+            try:
+                lat = float(loc.get('latitude', 0))
+                lng = float(loc.get('longitude', 0))
+            except (TypeError, ValueError):
+                continue
+            if lat == 0.0 and lng == 0.0:
+                continue
+            locations.append({
+                'id': camera_id,
+                'name': loc.get('camera_name', camera_id),
+                'lat': lat,
+                'lng': lng,
+                'description': loc.get('description', ''),
+                'common': loc.get('common', ''),
+            })
+
+        if locations:
+            center_lat = sum(loc['lat'] for loc in locations) / len(locations)
+            center_lng = sum(loc['lng'] for loc in locations) / len(locations)
+            zoom = 16
+        else:
+            center_lat, center_lng, zoom = 0.0, 0.0, 2
+
+        locations_json = json.dumps(locations)
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Dashboard Map</title>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            <style>
+                body {{ padding: 0; margin: 0; background: #f5f5f5; }}
+                html, body, #map {{ height: 100%; width: 100%; }}
+                .camera-marker {{
+                    background: #2563eb;
+                    border: 2px solid #ffffff;
+                    border-radius: 50%;
+                    width: 26px;
+                    height: 26px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #ffffff;
+                    font-size: 12px;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+                }}
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+            <script>
+                var map = L.map('map', {{
+                    zoomControl: false,
+                    attributionControl: false,
+                    dragging: true,
+                    scrollWheelZoom: false,
+                    doubleClickZoom: false,
+                    boxZoom: false,
+                    keyboard: false
+                }}).setView([{center_lat}, {center_lng}], {zoom});
+
+                L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                    maxZoom: 19
+                }}).addTo(map);
+
+                var cameraIcon = L.divIcon({{
+                    html: '<div class="camera-marker">📹</div>',
+                    className: '',
+                    iconSize: [26, 26],
+                    iconAnchor: [13, 13],
+                    popupAnchor: [0, -10]
+                }});
+
+                var locations = {locations_json};
+                var markers = [];
+
+                locations.forEach(function(loc) {{
+                    var popup = '<b>' + loc.name + '</b><br>' +
+                        (loc.description ? loc.description + '<br>' : '') +
+                        (loc.common ? 'Common: ' + loc.common + '<br>' : '') +
+                        'Lat: ' + loc.lat.toFixed(6) + ', Lng: ' + loc.lng.toFixed(6);
+                    var marker = L.marker([loc.lat, loc.lng], {{ icon: cameraIcon }})
+                        .addTo(map)
+                        .bindPopup(popup);
+                    markers.push(marker);
+                }});
+
+                if (markers.length === 1) {{
+                    map.setView([locations[0].lat, locations[0].lng], 18);
+                }} else if (markers.length > 1) {{
+                    var group = L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.15));
+                }}
+            </script>
+        </body>
+        </html>
+        """
+        self.setHtml(html)
+
 class MapPickerWidget(QDialog):
     """Dialog to pick a location from a map using lightweight Leaflet."""
     location_picked = pyqtSignal(float, float)

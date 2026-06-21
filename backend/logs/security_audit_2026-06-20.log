@@ -1,0 +1,24 @@
+2026-06-20 08:38:47.418 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:38:47.555 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:38:55.375 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:42:49.712 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:42:49.784 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:42:56.124 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:43:25.949 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:43:26.012 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:43:32.095 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:46:20.086 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:46:20.152 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:46:26.189 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:47:10.757 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:47:10.861 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:47:22.067 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:47:45.915 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:47:45.981 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:47:53.930 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 08:56:54.215 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 08:56:54.303 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 08:56:58.682 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-20 09:07:35.740 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-20 09:07:35.845 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-20 09:07:42.717 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin

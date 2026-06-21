@@ -1,0 +1,9 @@
+2026-06-21 08:18:14.396 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:18:14.580 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:18:27.150 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-21 08:19:12.177 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:19:12.259 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:19:18.650 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin
+2026-06-21 08:24:24.807 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:24:24.991 | AUDIT | AUTH_FAILURE | ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:24:30.688 | AUDIT | LOGIN_SUCCESS | ip=127.0.0.1 user=admin

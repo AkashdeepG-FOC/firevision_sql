@@ -1,0 +1,205 @@
+2026-06-21 08:17:57.614 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:17:57.615 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:17:57.616 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:17:57.618 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:18:13.880 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:13.881 | INFO     | backend.main:log_requests:79 – GET /health → 200 [28.9ms] ip=127.0.0.1
+2026-06-21 08:18:14.395 | WARNING  | backend.main:log_requests:79 – GET /api/users/ → 401 [4.5ms] ip=127.0.0.1
+2026-06-21 08:18:14.396 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:18:14.580 | WARNING  | backend.main:log_requests:79 – GET /api/cameras/ → 401 [3.4ms] ip=127.0.0.1
+2026-06-21 08:18:14.580 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:18:15.068 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:15.069 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:18:18.095 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:18.096 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:18.886 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:18.887 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:18:21.122 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:21.124 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:23.890 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:23.891 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:18:24.152 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:24.153 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:18:24.384 | INFO     | backend.routers.auth:login_for_access_token:23 – Login attempt – username='admin' ip=127.0.0.1
+2026-06-21 08:18:27.150 | SUCCESS  | backend.routers.auth:login_for_access_token:50 – Login successful – user=admin ip=127.0.0.1
+2026-06-21 08:18:27.150 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 user=admin
+2026-06-21 08:18:27.151 | INFO     | backend.main:log_requests:79 – POST /api/auth/token → 200 [2780.7ms] ip=127.0.0.1
+2026-06-21 08:18:28.179 | INFO     | backend.main:log_requests:79 – GET /api/users/me → 200 [1025.8ms] ip=127.0.0.1
+2026-06-21 08:18:28.638 | INFO     | backend.main:log_requests:79 – GET /api/cameras/ → 200 [406.6ms] ip=127.0.0.1
+2026-06-21 08:18:28.893 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:28.894 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:18:29.246 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:29.247 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:18:32.208 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:32.209 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:33.899 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:33.900 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:18:35.215 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:35.215 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:18:38.233 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:38.233 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:18:38.904 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:38.905 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:41.238 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:41.239 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:43.908 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:43.908 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:18:44.245 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:44.246 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:18:47.275 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:47.275 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:18:48.914 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:48.946 | INFO     | backend.main:log_requests:79 – GET /health → 200 [32.9ms] ip=127.0.0.1
+2026-06-21 08:18:50.282 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:50.283 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:18:53.304 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:18:53.304 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.8ms] ip=127.0.0.1
+2026-06-21 08:18:53.441 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:18:54.901 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:18:54.902 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:18:54.902 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:18:54.904 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:19:11.723 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:11.723 | INFO     | backend.main:log_requests:79 – GET /health → 200 [23.0ms] ip=127.0.0.1
+2026-06-21 08:19:12.176 | WARNING  | backend.main:log_requests:79 – GET /api/users/ → 401 [2.0ms] ip=127.0.0.1
+2026-06-21 08:19:12.177 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:19:12.258 | WARNING  | backend.main:log_requests:79 – GET /api/cameras/ → 401 [5.0ms] ip=127.0.0.1
+2026-06-21 08:19:12.259 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:19:12.507 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:12.507 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:19:15.517 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:15.518 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:19:16.260 | INFO     | backend.routers.auth:login_for_access_token:23 – Login attempt – username='admin' ip=127.0.0.1
+2026-06-21 08:19:18.650 | SUCCESS  | backend.routers.auth:login_for_access_token:50 – Login successful – user=admin ip=127.0.0.1
+2026-06-21 08:19:18.650 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 user=admin
+2026-06-21 08:19:18.651 | INFO     | backend.main:log_requests:79 – POST /api/auth/token → 200 [2394.2ms] ip=127.0.0.1
+2026-06-21 08:19:18.652 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:18.653 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.8ms] ip=127.0.0.1
+2026-06-21 08:19:19.694 | INFO     | backend.main:log_requests:79 – GET /api/users/me → 200 [1039.4ms] ip=127.0.0.1
+2026-06-21 08:19:20.137 | INFO     | backend.main:log_requests:79 – GET /api/cameras/ → 200 [385.9ms] ip=127.0.0.1
+2026-06-21 08:19:20.586 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:20.587 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:19:23.572 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:23.573 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:19:23.657 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:23.658 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:19:26.603 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:26.603 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:19:28.662 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:28.663 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:19:29.620 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:29.620 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:19:32.646 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:32.646 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:19:33.666 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:33.667 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:19:35.676 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:35.677 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:19:38.670 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:38.671 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:19:38.684 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:38.685 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:19:41.708 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:19:41.709 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:23:12.053 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:13.626 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:13.627 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:13.628 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:13.631 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:23:13.632 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:15.186 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:15.187 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:15.188 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:15.190 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:23:32.106 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:33.539 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:33.540 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:33.541 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:33.544 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:23:33.544 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:35.088 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:35.089 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:35.090 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:35.093 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:23:35.094 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:36.621 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:36.622 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:36.623 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:36.625 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:23:36.626 | INFO     | backend.main:shutdown_event:145 – FireVision API shutting down gracefully.
+2026-06-21 08:23:38.156 | INFO     | backend.main:<module>:33 – FireVision API starting up – environment loaded from .env
+2026-06-21 08:23:38.157 | INFO     | backend.main:<module>:49 – CORS origins configured: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8000']
+2026-06-21 08:23:38.158 | INFO     | backend.main:<module>:100 – All routers registered: auth, users, cameras, alerts
+2026-06-21 08:23:38.161 | SUCCESS  | backend.main:startup_event:141 – 🔥 FireVision API is live and ready to serve requests.
+2026-06-21 08:24:24.377 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:24.378 | INFO     | backend.main:log_requests:79 – GET /health → 200 [22.0ms] ip=127.0.0.1
+2026-06-21 08:24:24.806 | WARNING  | backend.main:log_requests:79 – GET /api/users/ → 401 [2.2ms] ip=127.0.0.1
+2026-06-21 08:24:24.807 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/users/ status=401
+2026-06-21 08:24:24.991 | WARNING  | backend.main:log_requests:79 – GET /api/cameras/ → 401 [2.4ms] ip=127.0.0.1
+2026-06-21 08:24:24.991 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 method=GET path=/api/cameras/ status=401
+2026-06-21 08:24:25.183 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:25.184 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:24:27.996 | INFO     | backend.routers.auth:login_for_access_token:23 – Login attempt – username='admin' ip=127.0.0.1
+2026-06-21 08:24:30.688 | SUCCESS  | backend.routers.auth:login_for_access_token:50 – Login successful – user=admin ip=127.0.0.1
+2026-06-21 08:24:30.688 | WARNING  | backend.core.logger:log_security_event:82 – ip=127.0.0.1 user=admin
+2026-06-21 08:24:30.689 | INFO     | backend.main:log_requests:79 – POST /api/auth/token → 200 [2695.1ms] ip=127.0.0.1
+2026-06-21 08:24:30.690 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:30.691 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.7ms] ip=127.0.0.1
+2026-06-21 08:24:31.869 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:31.871 | INFO     | backend.main:log_requests:79 – GET /api/users/me → 200 [1179.7ms] ip=127.0.0.1
+2026-06-21 08:24:31.872 | INFO     | backend.main:log_requests:79 – GET /health → 200 [3.7ms] ip=127.0.0.1
+2026-06-21 08:24:32.320 | INFO     | backend.main:log_requests:79 – GET /api/cameras/ → 200 [401.2ms] ip=127.0.0.1
+2026-06-21 08:24:33.497 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:33.498 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:24:36.506 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:36.507 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:24:36.875 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:36.876 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:24:39.523 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:39.524 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:24:41.879 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:41.880 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:24:42.550 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:42.551 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:24:45.580 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:45.580 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:24:46.883 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:46.884 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-21 08:24:48.601 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:48.602 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:24:51.623 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:51.623 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:24:51.888 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:51.889 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:24:54.644 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:54.645 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:24:56.893 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:56.894 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:24:57.672 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:24:57.672 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:00.698 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:00.699 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:25:01.902 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:01.903 | INFO     | backend.main:log_requests:79 – GET /health → 200 [0.9ms] ip=127.0.0.1
+2026-06-21 08:25:03.750 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:03.751 | INFO     | backend.main:log_requests:79 – GET /health → 200 [30.9ms] ip=127.0.0.1
+2026-06-21 08:25:06.767 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:06.768 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.7ms] ip=127.0.0.1
+2026-06-21 08:25:06.905 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:06.906 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:25:09.798 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:09.799 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:25:11.910 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:11.911 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:12.830 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:12.830 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:15.837 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:15.838 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:16.917 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:16.919 | INFO     | backend.main:log_requests:79 – GET /health → 200 [2.7ms] ip=127.0.0.1
+2026-06-21 08:25:18.861 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:18.862 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.4ms] ip=127.0.0.1
+2026-06-21 08:25:21.870 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:21.870 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:25:21.924 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:21.925 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1

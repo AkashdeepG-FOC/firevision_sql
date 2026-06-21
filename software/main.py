@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QDialog, QFormLayout, QSpinBox, QGroupBox, QTextEdit,
                            QSystemTrayIcon, QMenu, QAction, QSizePolicy, QDoubleSpinBox,
                            QTimeEdit, QListWidgetItem, QTabWidget, QListWidget, QSlider)
-from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QCursor, QPainter, QBrush, QFontDatabase
+from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QCursor, QPainter, QBrush, QFontDatabase, QPen, QPainterPath
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, QSize, QDateTime, QObject, pyqtSlot, QTime
 import folium
 import webbrowser
@@ -133,6 +133,25 @@ except ImportError as e:
 
 # BackgroundService removed
 
+def handle_missing_module(module_name: str, exception: Exception):
+    import traceback
+    error_msg = f"Critical module '{module_name}' is missing or failed to load.\n\nError details:\n{str(exception)}"
+    print(f"CRITICAL ERROR: {error_msg}")
+    
+    # Attempt to show a simple error dialog if QApplication is already created or can be created
+    try:
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle("Module Load Error")
+        msg_box.setText(error_msg)
+        msg_box.exec_()
+    except Exception as ui_e:
+        print(f"Could not show error dialog: {ui_e}")
+
 try:
     from google_drive_manager import GoogleDriveManager
 except ImportError as e:
@@ -178,8 +197,9 @@ except ImportError as e:
         fire_smoke_frame_ready = pyqtSignal(str, object, list, dict)
         camera_error = pyqtSignal(str, str)
         fire_smoke_alert = pyqtSignal(str, str, float)
-        def __init__(self):
+        def __init__(self, config_manager=None):
             super().__init__()
+            self.config_manager = config_manager
         def is_people_detection_enabled(self, camera_id): return False
         def enable_people_detection(self, camera_id, enabled): pass
         def is_fire_smoke_detection_enabled(self, camera_id): return False
@@ -203,7 +223,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    from ui_components import StorageChoiceDialog, EnhancedCameraWidget, AddCameraDialog
+    from ui_components import StorageChoiceDialog, EnhancedCameraWidget, AddCameraDialog, TelemetryPanel
 except ImportError as e:
     print(f"Warning: Could not import ui_components: {e}")
     class StorageChoiceDialog(QDialog):
@@ -232,6 +252,16 @@ except ImportError as e:
             self.setModal(True)
         def exec_(self): return QDialog.Rejected
         def get_camera_data(self): return None
+
+    class TelemetryPanel(QWidget):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+        def add_event(self, event_type, description):
+            pass
+        def update_camera_map(self, camera_locations):
+            pass
+        def set_cloud_status(self, data):
+            pass
 
 try:
     from enhanced_fullscreen_widget import EnhancedFullScreenCameraWidget
@@ -271,24 +301,7 @@ except ImportError as e:
         def set_current_user(self, user_id): pass
         def close(self): pass
 
-def handle_missing_module(module_name: str, exception: Exception):
-    import traceback
-    error_msg = f"Critical module '{module_name}' is missing or failed to load.\n\nError details:\n{str(exception)}"
-    print(f"CRITICAL ERROR: {error_msg}")
-    
-    # Attempt to show a simple error dialog if QApplication is already created or can be created
-    try:
-        from PyQt5.QtWidgets import QApplication, QMessageBox
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle("Module Load Error")
-        msg_box.setText(error_msg)
-        msg_box.exec_()
-    except Exception as ui_e:
-        print(f"Could not show error dialog: {ui_e}")
+# handle_missing_module is now defined earlier (before its first use)
 
 try:
     from notification_manager import NotificationManager
@@ -329,7 +342,7 @@ except ImportError as e:
 
 from app.ui.camera_location_manager import CameraLocationManager, CameraSelectionDialog, FireLocationMapWidget
 from app.ui.login_dialog import ModernLoginDialog
-from app.ui.widgets import DeleteCamerasDialog, ProfessionalEventCard, SkeletonCameraWidget, MapBridge, CameraLoaderThread
+from app.ui.widgets import DeleteCamerasDialog, ProfessionalEventCard, SkeletonCameraWidget, MapBridge, CameraLoaderThread, SingleCameraLoaderThread
 
 
 
@@ -375,6 +388,107 @@ class InitWorker(QThread):
             import traceback
             traceback.print_exc()
             self.finished.emit()
+
+
+class FireGuardCentralWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.alert_active = False
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Draw base background color
+        painter.fillRect(self.rect(), QBrush(QColor(3, 3, 3)))
+
+        # Draw background image with low opacity
+        bg_pixmap = QPixmap(resource_path("assests/fv_bg.png"))
+        if not bg_pixmap.isNull():
+            painter.setOpacity(0.28)
+
+        # scale image
+        scaled_bg = bg_pixmap.scaled(
+            w,
+            h,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+        )
+          # center position calculation
+        x = (w - scaled_bg.width()) // 2
+        y = (h - scaled_bg.height()) // 2
+
+        # move image slightly left and down
+        x_offset = -30   # left shift (increase negative = more left)
+        y_offset = 150    # down shift
+
+        painter.drawPixmap(x, y_offset, scaled_bg)
+
+        painter.setOpacity(1.0)
+        
+        # Color of circuit lines
+        color = QColor(0, 255, 127)  # Neon green
+        cyan_color = QColor(0, 255, 240)  # Neon cyan
+        
+        # Glow pens
+        green_glow = QPen(QColor(0, 255, 127, 40), 6)
+        cyan_glow = QPen(QColor(0, 255, 240, 40), 6)
+        
+        # Core pens
+        green_core = QPen(color, 2)
+        cyan_core = QPen(cyan_color, 2)
+        
+        # Main vertical line next to sidebar (x=240 is sidebar boundary)
+        # Line 1: Green bus line running at x=242
+        path1 = QPainterPath()
+        path1.moveTo(242, 60)
+        path1.lineTo(242, h - 80)
+        # Bends into sidebar bottom
+        path1.lineTo(260, h - 60)
+        path1.lineTo(w - 20, h - 60)
+        
+        painter.setPen(green_glow)
+        painter.drawPath(path1)
+        painter.setPen(green_core)
+        painter.drawPath(path1)
+        
+        # Line 2: Cyan bus line running at x=246
+        path2 = QPainterPath()
+        path2.moveTo(246, 90)
+        path2.lineTo(246, h - 90)
+        path2.lineTo(265, h - 55)
+        path2.lineTo(w - 15, h - 55)
+        
+        painter.setPen(cyan_glow)
+        painter.drawPath(path2)
+        painter.setPen(cyan_core)
+        painter.drawPath(path2)
+        
+        # Branch lines into sidebar tabs:
+        tab_y_positions = [180, 230, 280, 330, 380]
+        painter.setPen(Qt.NoPen)
+        for y in tab_y_positions:
+            # Glow circle at junction
+            painter.setBrush(QBrush(QColor(0, 255, 127, 80)))
+            painter.drawEllipse(239, y - 3, 7, 7)
+            
+            # Core circle
+            painter.setBrush(QBrush(color))
+            painter.drawEllipse(241, y - 2, 4, 4)
+            
+            # Line entering sidebar
+            painter.setPen(green_core)
+            painter.drawLine(242, y, 225, y)
+            
+            # Short diagonal branch entering the main grid area
+            painter.setPen(cyan_core)
+            painter.drawLine(246, y, 260, y + 10)
+            painter.drawLine(260, y + 10, 275, y + 10)
+            painter.setBrush(QBrush(cyan_color))
+            painter.drawEllipse(273, y + 8, 4, 4)
 
 
 class PersistentMainWindow(QMainWindow):
@@ -459,6 +573,8 @@ class PersistentMainWindow(QMainWindow):
             self.status_worker = SystemStatusWorker()
             if hasattr(self, 'system_status_indicator'):
                 self.status_worker.status_updated.connect(self.system_status_indicator.set_status)
+            if hasattr(self, 'telemetry_panel'):
+                self.status_worker.status_updated.connect(self.telemetry_panel.set_cloud_status)
             self.status_worker.start()
         except Exception as e:
             print(f"Failed to start status worker: {e}")
@@ -705,7 +821,7 @@ class PersistentMainWindow(QMainWindow):
 
     def setup_ui(self):
         """Setup the main user interface (modern dashboard style with custom title bar)"""
-        central_widget = QWidget()
+        central_widget = FireGuardCentralWidget()
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -715,6 +831,7 @@ class PersistentMainWindow(QMainWindow):
 
         # Main dashboard area (horizontal layout)
         dashboard_area = QWidget()
+        dashboard_area.setStyleSheet("background-color: transparent;")
         dashboard_layout = QHBoxLayout(dashboard_area)
         dashboard_layout.setContentsMargins(0, 0, 0, 0)
         dashboard_layout.setSpacing(0)
@@ -737,8 +854,14 @@ class PersistentMainWindow(QMainWindow):
         title_layout.setSpacing(10)
 
         # App name label
-        title_label = QLabel("Fire Guard - AI powered Fire And People detection System")
-        title_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold;")
+        title_label = QLabel("FireGuard - AI powered Fire And People detection System")
+        title_label.setStyleSheet("""
+            color: #00ffcc;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: 'Outfit', 'Inter', 'Segoe UI';
+            letter-spacing: 0.5px;
+        """)
         title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         title_layout.addWidget(title_label)
 
@@ -841,7 +964,12 @@ class PersistentMainWindow(QMainWindow):
         """Create the sidebar navigation"""
         self.sidebar = QWidget()
         self.sidebar.setFixedWidth(240)
-        self.sidebar.setStyleSheet("background-color: #050505; border: none;")
+        self.sidebar.setStyleSheet("""
+            QWidget {
+                background-color: rgba(10, 10, 10, 0.85);
+                border-right: 1px solid rgba(0, 255, 255, 0.15);
+            }
+        """)
         sidebar_layout = QVBoxLayout(self.sidebar)
         sidebar_layout.setContentsMargins(16, 20, 16, 20)
         sidebar_layout.setSpacing(10)
@@ -857,35 +985,32 @@ class PersistentMainWindow(QMainWindow):
         else:
             inter_font_family = "Inter"  # Fallback
 
-        # Logo section - FireVision logo centered with settings icon
+        # Logo section - Styled chrome/cyan font
         logo_widget = QWidget()
         logo_widget.setFixedHeight(70)
+        logo_widget.setStyleSheet("background: transparent; border: none;")
+
         logo_layout = QHBoxLayout(logo_widget)
         logo_layout.setContentsMargins(8, 8, 8, 8)
         logo_layout.setSpacing(0)
 
-        # FireVision Logo image centered
-        logo_container = QWidget()
-        logo_container_layout = QVBoxLayout(logo_container)
-        logo_container_layout.setContentsMargins(0, 0, 0, 0)
-        logo_container_layout.setAlignment(Qt.AlignCenter)
-        
+        # Logo Image
         logo_label = QLabel()
-        logo_pixmap = QPixmap(resource_path("assests/sidebar_icons/firevision_logo.png"))
-        if not logo_pixmap.isNull():
-            scaled_logo = logo_pixmap.scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_logo)
-        else:
-            # Fallback to FV text if image not found
-            logo_label.setText("FV")
-            logo_label.setStyleSheet("color: white; font-size: 28px; font-weight: bold;")
+        pixmap = QPixmap(resource_path("assests/logo/fv_logo-removebg-preview.png"))
+        if not pixmap.isNull():
+            logo_label.setPixmap(
+                pixmap.scaled(
+                    100, 100,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
+            )
         logo_label.setAlignment(Qt.AlignCenter)
-        logo_container_layout.addWidget(logo_label)
-        
+        logo_label.setStyleSheet("background: transparent; border: none;")
+
         logo_layout.addWidget(logo_label)
         logo_layout.addStretch()
 
-        
         sidebar_layout.addWidget(logo_widget)
         
         # Add spacing to move navigation links down
@@ -905,10 +1030,11 @@ class PersistentMainWindow(QMainWindow):
                 scaled_icon = icon_pixmap.scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 icon_label.setPixmap(scaled_icon)
             icon_label.setFixedSize(24, 24)
+            icon_label.setStyleSheet("background: transparent; border: none;")
             
             # Text
             text_label = QLabel(text)
-            text_label.setStyleSheet(f"color: white; font-size: 15px; font-weight: 500; font-family: '{inter_font_family}';")
+            text_label.setStyleSheet(f"color: white; font-size: 15px; font-weight: 500; font-family: '{inter_font_family}'; background: transparent; border: none;")
             
             btn_layout.addWidget(icon_label)
             btn_layout.addWidget(text_label)
@@ -917,7 +1043,7 @@ class PersistentMainWindow(QMainWindow):
             # Create container widget for the layout
             container = QWidget()
             container.setAttribute(Qt.WA_TranslucentBackground)
-            container.setStyleSheet("background: transparent;")
+            container.setStyleSheet("background: transparent; border: none;")
             container.setLayout(btn_layout)
             
             # Set the container as the button's layout
@@ -929,25 +1055,27 @@ class PersistentMainWindow(QMainWindow):
                 btn.setObjectName("activeNavButton")
                 btn.setStyleSheet("""
                     QPushButton#activeNavButton {
-                        background-color: #1e3a5f;
-                        border-radius: 10px;
-                        border: none;
-                        border-left: 3px solid #4a90e2;
+                        background-color: rgba(0, 255, 255, 0.12);
+                        border-radius: 12px;
+                        border: 1px solid rgba(0, 255, 255, 0.4);
+                        border-left: 4px solid #00ffcc;
                     }
                     QPushButton#activeNavButton:hover {
-                        background-color: #2a4a6f;
+                        background-color: rgba(0, 255, 255, 0.18);
                     }
                 """)
             else:
                 btn.setObjectName("navButton")
                 btn.setStyleSheet("""
                     QPushButton#navButton {
-                        background-color: transparent;
-                        border-radius: 10px;
-                        border: none;
+                        background-color: rgba(255, 255, 255, 0.02);
+                        border-radius: 12px;
+                        border: 1px solid rgba(255, 255, 255, 0.05);
                     }
                     QPushButton#navButton:hover {
-                        background-color: #2a2a2a;
+                        background-color: rgba(0, 255, 255, 0.08);
+                        border: 1px solid rgba(0, 255, 255, 0.2);
+                        color: #ffffff;
                     }
                 """)
             
@@ -962,21 +1090,14 @@ class PersistentMainWindow(QMainWindow):
         self.recordings_btn = create_nav_button("Recordings", "recordings")
         self.recordings_btn.clicked.connect(self.show_recordings_page)
 
-        # Service button removed
-
         self.alerts_btn = create_nav_button("Alerts", "alerts")
         self.alerts_btn.clicked.connect(self.show_alerts_page)
-
-        # Backup button removed
 
         self.camera_manager_btn = create_nav_button("Camera manager", "camera_manager")
         self.camera_manager_btn.clicked.connect(self.show_camera_manager_page)
 
         self.map_overview_btn = create_nav_button("Map overview", "map")
         self.map_overview_btn.clicked.connect(self.show_map_overview_page)
-
-
-
 
         # Create hidden users_btn placeholder to avoid errors in navigation methods
         self.users_btn = create_nav_button("Users", "user")
@@ -987,13 +1108,13 @@ class PersistentMainWindow(QMainWindow):
         sidebar_layout.addWidget(self.alerts_btn)
         sidebar_layout.addWidget(self.camera_manager_btn)
         sidebar_layout.addWidget(self.map_overview_btn)
-
         
         sidebar_layout.addStretch()
         
         # User profile section at bottom
         user_widget = QWidget()
         user_widget.setFixedHeight(65)
+        user_widget.setStyleSheet("background: transparent; border: none;")
         user_layout = QHBoxLayout(user_widget)
         user_layout.setContentsMargins(10, 10, 10, 10)
         user_layout.setSpacing(14)
@@ -1002,7 +1123,8 @@ class PersistentMainWindow(QMainWindow):
         user_icon_container = QWidget()
         user_icon_container.setFixedSize(48, 48)
         user_icon_container.setStyleSheet("""
-            background-color: #1a1a1a;
+            background-color: rgba(0, 255, 255, 0.08);
+            border: 1px solid rgba(0, 255, 255, 0.3);
             border-radius: 24px;
         """)
         
@@ -1016,10 +1138,11 @@ class PersistentMainWindow(QMainWindow):
             scaled_user_icon = user_icon_pixmap.scaled(26, 26, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             user_icon_label.setPixmap(scaled_user_icon)
         user_icon_label.setAlignment(Qt.AlignCenter)
+        user_icon_label.setStyleSheet("background: transparent; border: none;")
         user_icon_layout.addWidget(user_icon_label)
 
         self.user_label = QLabel("Admin")
-        self.user_label.setStyleSheet(f"color: white; font-size: 15px; font-weight: 500; font-family: '{inter_font_family}';")
+        self.user_label.setStyleSheet(f"color: white; font-size: 15px; font-weight: 500; font-family: '{inter_font_family}'; background: transparent; border: none;")
 
         user_layout.addWidget(user_icon_container)
         user_layout.addWidget(self.user_label)
@@ -1057,6 +1180,7 @@ class PersistentMainWindow(QMainWindow):
 
     def create_dashboard_main_grid(self, dashboard_layout):
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setStyleSheet("background-color: transparent;")
         self.cameras_page = self.create_cameras_page()
         self.stacked_widget.addWidget(self.cameras_page)
         self.recordings_page = RecordingsPage(self.google_drive_manager)
@@ -1133,8 +1257,14 @@ class PersistentMainWindow(QMainWindow):
 
     def show_cameras_page(self):
         """Show cameras page"""
+        self.refresh_dashboard_map()
         self.stacked_widget.setCurrentWidget(self.cameras_page)
         self.set_active_nav_button(self.cameras_btn)
+
+    def refresh_dashboard_map(self):
+        """Refresh the dashboard mini-map with current camera locations."""
+        if hasattr(self, 'telemetry_panel') and hasattr(self, 'camera_location_manager'):
+            self.telemetry_panel.update_camera_map(self.camera_location_manager.camera_locations)
 
     def show_recordings_page(self):
         """Show recordings page"""
@@ -1345,10 +1475,15 @@ class PersistentMainWindow(QMainWindow):
     def create_cameras_page(self):
         """Create the cameras page"""
         page = QWidget()
-        page.setStyleSheet("background-color: #050505;")
-        layout = QVBoxLayout(page)
-        # Increase bottom margin from 20 to 50 to move the green border up
-        layout.setContentsMargins(20, 0, 20, 50)
+        page.setStyleSheet("background-color: transparent;")
+        page_layout = QHBoxLayout(page)
+        page_layout.setContentsMargins(20, 0, 20, 50)
+        page_layout.setSpacing(16)
+
+        content_widget = QWidget()
+        content_widget.setStyleSheet("background-color: transparent;")
+        layout = QVBoxLayout(content_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         header = QWidget()
         header_layout = QHBoxLayout(header)
@@ -1400,10 +1535,15 @@ class PersistentMainWindow(QMainWindow):
 
         scroll_area.setWidget(camera_container)
         l_shape_layout.addWidget(scroll_area)
-        
+
         layout.addWidget(self.l_shape_container, 1)
+        page_layout.addWidget(content_widget, 1)
+
+        self.telemetry_panel = TelemetryPanel()
+        page_layout.addWidget(self.telemetry_panel, 0, Qt.AlignTop)
 
         self.load_saved_cameras()
+        self.refresh_dashboard_map()
 
         return page
 
@@ -1608,7 +1748,7 @@ class PersistentMainWindow(QMainWindow):
             self.update_camera_grid()
 
             # Start background thread to load camera
-            loader_thread = CameraLoaderThread(camera_data, self.camera_manager)
+            loader_thread = SingleCameraLoaderThread(camera_data, self.camera_manager)
             loader_thread.camera_loaded.connect(self.on_camera_loaded)
             loader_thread.camera_failed.connect(self.on_camera_failed)
             loader_thread.start()
@@ -1851,6 +1991,11 @@ class PersistentMainWindow(QMainWindow):
                             }
                         )
                         print(f"👥 People detection alert created: {alert_id}")
+                        if hasattr(self, 'telemetry_panel'):
+                            self.telemetry_panel.add_event(
+                                "Sensors",
+                                f"PERSON [AI] {people_count} detected on {camera_name}."
+                            )
                         
             except Exception as e:
                 print(f"❌ Error creating people detection alert: {e}")
@@ -1894,6 +2039,13 @@ class PersistentMainWindow(QMainWindow):
         camera_name = "Unknown Camera"
         if camera_id in self.camera_widgets:
             camera_name = self.camera_widgets[camera_id].camera_name
+
+        if hasattr(self, 'telemetry_panel'):
+            self.telemetry_panel.add_event(
+                alert_type,
+                f"{alert_type.capitalize()} detected on {camera_name} ({confidence:.0%})."
+            )
+
         event = {
             "type": alert_type.capitalize(),
             "status": "Critical",

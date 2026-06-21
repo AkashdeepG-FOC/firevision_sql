@@ -130,5 +130,11 @@
     "name": "one",
     "source": "0",
     "type": "webcam"
+  },
+  {
+    "id": "1",
+    "name": "omn",
+    "source": "0",
+    "type": "webcam"
   }
 ]
