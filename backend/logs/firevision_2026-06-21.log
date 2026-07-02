@@ -203,3 +203,39 @@
 2026-06-21 08:25:21.870 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
 2026-06-21 08:25:21.924 | DEBUG    | backend.main:health_check:123 – Health check requested
 2026-06-21 08:25:21.925 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:24.880 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:24.881 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:26.928 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:26.929 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:25:27.888 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:27.889 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:25:30.896 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:30.897 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.6ms] ip=127.0.0.1
+2026-06-21 08:25:31.932 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:31.933 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:33.924 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:33.925 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:25:36.937 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:36.938 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.6ms] ip=127.0.0.1
+2026-06-21 08:25:36.949 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:36.950 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:25:39.957 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:39.958 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-21 08:25:41.942 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:41.943 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.0ms] ip=127.0.0.1
+2026-06-21 08:25:42.966 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:42.967 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:25:45.974 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:45.975 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1
+2026-06-21 08:25:46.948 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:46.949 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.3ms] ip=127.0.0.1
+2026-06-21 08:25:49.003 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:49.004 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-21 08:25:51.952 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:51.953 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-21 08:25:52.012 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:52.013 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.5ms] ip=127.0.0.1
+2026-06-21 08:25:55.037 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:55.037 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.2ms] ip=127.0.0.1
+2026-06-21 08:25:56.957 | DEBUG    | backend.main:health_check:123 – Health check requested
+2026-06-21 08:25:56.958 | INFO     | backend.main:log_requests:79 – GET /health → 200 [1.1ms] ip=127.0.0.1

@@ -13,8 +13,9 @@ try:
                                  QScrollArea, QTableWidget, QTableWidgetItem, QHeaderView,
                                  QDialog, QFormLayout, QSpinBox, QGroupBox, QTextEdit,
                                  QListWidget, QListWidgetItem, QSizePolicy)
-    from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QPainter, QPainterPath
-    from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, QSize, QDateTime
+    from PyQt5.QtGui import QPixmap, QImage, QIcon, QFont, QPalette, QColor, QPainter, QPainterPath, QLinearGradient, QPen, QBrush, QRegion
+    from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, QSize, QDateTime, QRectF
+    from PyQt5.QtWidgets import QGraphicsDropShadowEffect
 except Exception as e:
     print("PyQt Import Failed in ui_components:", e)
     import traceback
@@ -32,13 +33,13 @@ except ImportError:
         from PyQt5.QtWebEngineWidgets import QWebEngineView
 
         class LightweightMapWebView(QWebEngineView):
-            def load_cameras_map(self, camera_locations=None):
+            def load_cameras_map(self, camera_locations=None, compact=False):
                 self.setHtml("<p style='color:#888;text-align:center;margin-top:40px;'>Map unavailable</p>")
     except ImportError:
         class LightweightMapWebView(QWidget):
             def __init__(self, parent=None):
                 super().__init__(parent)
-            def load_cameras_map(self, camera_locations=None):
+            def load_cameras_map(self, camera_locations=None, compact=False):
                 pass
 
 class StorageChoiceDialog(QDialog):
@@ -2009,89 +2010,219 @@ class NetworkHealthGraph(QWidget):
             painter.drawRect(bx, h - bh, bar_width, bh)
 
 
-class TelemetryPanel(QWidget):
+class DashboardCardFrame(QWidget):
+    """Outer dashboard card with black background, green glow, and bottom light streaks."""
+
+    CARD_RADIUS = 22
+    INNER_MARGIN = 20
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(310)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: rgba(10, 10, 10, 0.6);
-                border: 1px solid rgba(0, 255, 255, 0.15);
-                border-radius: 16px;
-                color: #ffffff;
-            }
-            QLabel {
-                border: none;
-                background-color: transparent;
-            }
-        """)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setFixedWidth(288)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(10)
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
 
-        self.cloud_status_label = QLabel("Connecting...")
+        rect = QRectF(self.rect()).adjusted(6, 6, -6, -6)
+
+        for i in range(10, 0, -1):
+            glow_rect = rect.adjusted(-i, -i, i, i)
+            alpha = 4 + i * 2
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(0, 255, 90, alpha))
+            painter.drawRoundedRect(glow_rect, self.CARD_RADIUS + 4, self.CARD_RADIUS + 4)
+
+        painter.setBrush(QColor(0, 0, 0))
+        painter.setPen(QPen(QColor(0, 255, 100, 85), 1.5))
+        painter.drawRoundedRect(rect, self.CARD_RADIUS, self.CARD_RADIUS)
+
+        w = self.width()
+        h = self.height()
+        streak_top = h - 72
+        painter.setCompositionMode(QPainter.CompositionMode_Plus)
+        for x in range(24, w - 24, 16):
+            grad = QLinearGradient(x, streak_top, x, h - 8)
+            grad.setColorAt(0.0, QColor(0, 255, 80, 0))
+            grad.setColorAt(0.45, QColor(0, 255, 80, 18))
+            grad.setColorAt(1.0, QColor(0, 255, 80, 0))
+            painter.setBrush(grad)
+            painter.setPen(Qt.NoPen)
+            painter.drawRect(x, streak_top, 2, h - streak_top - 8)
+
+        painter.end()
+
+
+class TelemetryPanel(QWidget):
+    INNER_WIDTH = 248
+    MAP_WIDTH = 248
+    MAP_HEIGHT = 180
+    EVENTS_HEIGHT = 190
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setFixedWidth(288)
+
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.card = DashboardCardFrame()
+        card_layout = QVBoxLayout(self.card)
+        card_layout.setContentsMargins(self.card.INNER_MARGIN, 22, self.card.INNER_MARGIN, 18)
+        card_layout.setSpacing(0)
+
+        badge_row = QHBoxLayout()
+        badge_row.setContentsMargins(0, 0, 0, 0)
+        badge_row.addStretch()
+        self.cloud_status_label = QLabel("Connected to Cloud")
         self.cloud_status_label.setAlignment(Qt.AlignCenter)
-        self.cloud_status_label.setFixedHeight(34)
         self.cloud_status_label.setStyleSheet("""
             QLabel {
-                background-color: rgba(100, 100, 100, 0.8);
+                background-color: #10b981;
                 color: #ffffff;
-                font-size: 12px;
-                font-weight: bold;
-                border-radius: 17px;
-                padding: 0 12px;
+                font-size: 15px;
+                font-weight: 700;
+                font-family: 'Segoe UI', 'Inter', sans-serif;
+                border-radius: 25px;
+                padding: 12px 28px;
             }
         """)
-        layout.addWidget(self.cloud_status_label)
+        badge_row.addWidget(self.cloud_status_label)
+        badge_row.addStretch()
+        card_layout.addLayout(badge_row)
+        card_layout.addSpacing(18)
+
+        map_row = QHBoxLayout()
+        map_row.setContentsMargins(0, 0, 0, 0)
+        map_row.addStretch()
+        self.map_frame = QFrame()
+        self.map_frame.setFixedSize(self.MAP_WIDTH, self.MAP_HEIGHT)
+        self.map_frame.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border-radius: 25px;
+                border: none;
+            }
+        """)
+        map_inner = QVBoxLayout(self.map_frame)
+        map_inner.setContentsMargins(8, 8, 8, 8)
+        map_inner.setSpacing(0)
 
         self.map_view = LightweightMapWebView()
-        self.map_view.setFixedSize(286, 180)
-        self.map_view.setStyleSheet(
-            "border: 1px solid rgba(0, 255, 255, 0.1); border-radius: 8px; background-color: #f5f5f5;"
-        )
-        layout.addWidget(self.map_view)
+        self.map_view.setStyleSheet("background: transparent; border: none;")
+        map_inner.addWidget(self.map_view)
+        self._apply_map_round_clip()
 
-        le_header = QLabel("Latest Events")
-        le_header.setStyleSheet("font-size: 13px; font-weight: bold; color: #00ffcc; margin-top: 5px;")
-        layout.addWidget(le_header)
+        map_row.addWidget(self.map_frame)
+        map_row.addStretch()
+        card_layout.addLayout(map_row)
+        card_layout.addSpacing(16)
+
+        self.events_title = QLabel("Latest Events")
+        self.events_title.setStyleSheet("""
+            QLabel {
+                color: #ffffff;
+                font-size: 16px;
+                font-weight: 600;
+                font-family: 'Segoe UI', 'Inter', sans-serif;
+                background: transparent;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+        """)
+        card_layout.addWidget(self.events_title)
+        card_layout.addSpacing(10)
+
+        self.events_frame = QFrame()
+        self.events_frame.setObjectName("eventsPanel")
+        self.events_frame.setFixedSize(self.INNER_WIDTH, self.EVENTS_HEIGHT)
+        self.events_frame.setStyleSheet("""
+            QFrame#eventsPanel {
+                background-color: rgba(16, 20, 16, 0.82);
+                border: 1px solid rgba(0, 255, 100, 0.22);
+                border-radius: 14px;
+            }
+        """)
+        events_glow = QGraphicsDropShadowEffect(self.events_frame)
+        events_glow.setBlurRadius(18)
+        events_glow.setOffset(0, 0)
+        events_glow.setColor(QColor(0, 255, 90, 70))
+        self.events_frame.setGraphicsEffect(events_glow)
+
+        events_layout = QVBoxLayout(self.events_frame)
+        events_layout.setContentsMargins(6, 4, 2, 4)
+        events_layout.setSpacing(0)
 
         self.event_list = QListWidget()
-        self.event_list.setMinimumHeight(180)
-        self.event_list.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.event_list.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.event_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.event_list.setStyleSheet("""
             QListWidget {
-                background-color: rgba(5, 5, 5, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 8px;
-                padding: 3px;
+                background: transparent;
+                border: none;
+                outline: none;
+                padding: 0;
             }
             QListWidget::item {
                 background: transparent;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-                padding: 2px;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+            QScrollBar:vertical {
+                width: 0px;
+                background: transparent;
+            }
+            QScrollBar::handle:vertical,
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical {
+                background: transparent;
+                height: 0px;
             }
         """)
         self.event_list.setSelectionMode(QListWidget.NoSelection)
-        layout.addWidget(self.event_list, 1)
+        self.event_list.setFocusPolicy(Qt.NoFocus)
+        events_layout.addWidget(self.event_list)
+
+        card_layout.addWidget(self.events_frame, 0, Qt.AlignHCenter)
+        card_layout.addSpacing(6)
+
+        outer_layout.addWidget(self.card)
 
         self.populate_initial_events()
-        self.map_view.load_cameras_map({})
+        self.map_view.load_cameras_map({}, compact=True)
+        QTimer.singleShot(0, self._sync_card_height)
+
+    def _apply_map_round_clip(self):
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT), 25, 25)
+        self.map_frame.setMask(QRegion(path.toFillPolygon().toPolygon()))
+
+    def _sync_card_height(self):
+        badge_h = self.cloud_status_label.sizeHint().height()
+        total = 22 + badge_h + 18 + self.MAP_HEIGHT + 16
+        total += self.events_title.sizeHint().height() + 10
+        total += self.EVENTS_HEIGHT + 6 + 18
+        self.card.setFixedHeight(total)
 
     def set_cloud_status(self, data):
         mode = data.get("mode", "offline")
         if mode == "online":
-            bg = "rgba(34, 197, 94, 0.9)"
+            bg = "#22c55e"
             text = "Connected to Cloud"
         elif mode == "syncing":
             pending = data.get("sync_pending", 0)
-            bg = "rgba(234, 179, 8, 0.9)"
-            text = f"Synchronizing Events ({pending})"
+            bg = "#eab308"
+            text = f"Synchronizing ({pending})"
         elif mode == "limited":
-            bg = "rgba(249, 115, 22, 0.9)"
+            bg = "#f97316"
             text = "Limited Connectivity"
         else:
-            bg = "rgba(239, 68, 68, 0.9)"
+            bg = "#ef4444"
             text = "Offline Mode Active"
 
         self.cloud_status_label.setText(text)
@@ -2099,76 +2230,110 @@ class TelemetryPanel(QWidget):
             QLabel {{
                 background-color: {bg};
                 color: #ffffff;
-                font-size: 12px;
-                font-weight: bold;
-                border-radius: 17px;
-                padding: 0 12px;
+                font-size: 15px;
+                font-weight: 700;
+                font-family: 'Segoe UI', 'Inter', sans-serif;
+                border-radius: 25px;
+                padding: 12px 28px;
             }}
         """)
 
     def update_camera_map(self, camera_locations):
-        self.map_view.load_cameras_map(camera_locations or {})
+        self.map_view.load_cameras_map(camera_locations or {}, compact=True)
 
     def populate_initial_events(self):
         events = [
-            ("Sensors", "Camera is scenery of facility.", QColor("#00ff66"), False),
-            ("Sensors", "PERSON [AI] powered has detected.", QColor("#00ff66"), False),
-            ("Alert", "POSSIBLE HEAT SOURCE detected.", QColor("#ffcc00"), True),
-            ("Alert", "Person on powered Fire detected.", QColor("#ff3333"), True),
-            ("Sensors", "Camera is scenery of facility.", QColor("#00ff66"), False),
+            ("Sensors", "PERSON[AI] powered fias detected.", "#10b981", False),
+            ("Sensors", "Camend is esernay of faaility.", "#10b981", False),
+            ("Alert", "POSSIBLE HEAT SOURCE detected.", "#facc15", False),
+            ("Alert", "Persona ini powered Fire detected.", "#ef4444", True),
+            ("Alert", "PERSON [AI] powered fis detected.", "#ef4444", False),
+            ("Sensors", "Camend is coornay of facility.", "#10b981", False),
+            ("Sensors", "PERSON [AI] powered fias detected.", "#10b981", False),
         ]
-        for tag, desc, color, highlight in events:
+        for tag, desc, color, highlight in reversed(events):
             self.add_event_item(tag, desc, color, highlight=highlight)
 
     def add_event_item(self, tag, desc, color, highlight=False):
         item_widget = QWidget()
-        bg = "rgba(255, 255, 255, 0.06)" if highlight else "transparent"
-        item_widget.setStyleSheet(f"background: {bg}; border: none; border-radius: 6px;")
+        bg = "rgba(255, 255, 255, 0.07)" if highlight else "transparent"
+        item_widget.setFixedHeight(26)
+        item_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {bg};
+                border: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                border-radius: 4px;
+            }}
+        """)
 
         item_layout = QHBoxLayout(item_widget)
-        item_layout.setContentsMargins(6, 5, 6, 5)
-        item_layout.setSpacing(8)
+        item_layout.setContentsMargins(4, 0, 4, 0)
+        item_layout.setSpacing(6)
 
         if tag == "Alert":
-            icon = "⚠"
-            icon_color = color.name()
+            icon_label = QLabel("▲")
+            icon_label.setFixedSize(12, 26)
+            icon_label.setAlignment(Qt.AlignCenter)
+            icon_label.setStyleSheet(f"""
+                color: {color};
+                font-size: 8px;
+                background: transparent;
+                border: none;
+            """)
         else:
-            icon = "●"
-            icon_color = color.name()
-
-        icon_label = QLabel(icon)
-        icon_label.setFixedWidth(14)
-        icon_label.setStyleSheet(f"color: {icon_color}; font-size: 11px; background: transparent;")
+            icon_label = QLabel("●")
+            icon_label.setFixedSize(12, 26)
+            icon_label.setAlignment(Qt.AlignCenter)
+            icon_label.setStyleSheet(f"""
+                color: {color};
+                font-size: 9px;
+                background: transparent;
+                border: none;
+            """)
 
         tag_label = QLabel(tag)
-        tag_label.setFixedWidth(52)
-        tag_label.setStyleSheet(f"color: {color.name()}; font-size: 10px; font-weight: bold; background: transparent;")
+        tag_label.setFixedWidth(48)
+        tag_label.setStyleSheet(f"""
+            color: {color};
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background: transparent;
+            border: none;
+        """)
 
         desc_label = QLabel(desc)
-        desc_label.setStyleSheet("color: #d0d0d0; font-size: 10px; background: transparent;")
-        desc_label.setWordWrap(True)
+        desc_label.setStyleSheet("""
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 11px;
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background: transparent;
+            border: none;
+        """)
+        desc_label.setWordWrap(False)
 
         item_layout.addWidget(icon_label)
         item_layout.addWidget(tag_label)
         item_layout.addWidget(desc_label, 1)
 
         list_item = QListWidgetItem()
-        list_item.setSizeHint(item_widget.sizeHint())
+        list_item.setSizeHint(QSize(self.INNER_WIDTH - 12, 26))
 
         self.event_list.insertItem(0, list_item)
         self.event_list.setItemWidget(list_item, item_widget)
 
-        if self.event_list.count() > 20:
+        while self.event_list.count() > 12:
             self.event_list.takeItem(self.event_list.count() - 1)
 
     def add_event(self, event_type, description):
         event_lower = event_type.lower()
         if any(k in event_lower for k in ("fire", "alert", "critical", "smoke", "heat")):
-            color = QColor("#ff3333")
+            color = "#ef4444" if "fire" in event_lower else "#facc15"
             tag = "Alert"
-            highlight = True
+            highlight = "fire" in event_lower
         else:
-            color = QColor("#00ff66")
+            color = "#34d399"
             tag = "Sensors"
             highlight = False
         self.add_event_item(tag, description, color, highlight=highlight)

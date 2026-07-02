@@ -76,8 +76,8 @@ class LightweightMapWebView(QWebEngineView):
         """
         self.setHtml(html)
 
-    def load_cameras_map(self, camera_locations=None):
-        """Load a compact read-only Leaflet map with camera markers."""
+    def load_cameras_map(self, camera_locations=None, compact=False):
+        """Load a read-only Leaflet map with camera markers."""
         locations = []
         for camera_id, loc in (camera_locations or {}).items():
             try:
@@ -99,11 +99,45 @@ class LightweightMapWebView(QWebEngineView):
         if locations:
             center_lat = sum(loc['lat'] for loc in locations) / len(locations)
             center_lng = sum(loc['lng'] for loc in locations) / len(locations)
-            zoom = 16
+            if compact:
+                def dist(loc):
+                    return (loc['lat'] - center_lat) ** 2 + (loc['lng'] - center_lng) ** 2
+                locations = sorted(locations, key=dist)[:12]
+            zoom = 18 if compact else 16
         else:
             center_lat, center_lng, zoom = 0.0, 0.0, 2
 
         locations_json = json.dumps(locations)
+        compact_js = 'true' if compact else 'false'
+        map_bg = '#ffffff'
+        tile_url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+
+        pin_html = (
+            '<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">'
+            '<path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#2b7fff" stroke="#ffffff" stroke-width="1.5"/>'
+            '<path d="M6 9C6 8.45 6.45 8 7 8h5c.55 0 1 .45 1 1v1.5l2.5-2.5c.39-.39 1.02-.11 1.02.45v6.1c0 .56-.63.84-1.02.45L13 12.5V14c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1V9z" fill="#ffffff"/>'
+            '</svg>'
+        )
+        pin_html_js = json.dumps(pin_html)
+
+        marker_css = """
+                body { padding: 0; margin: 0; background: """ + map_bg + """; overflow: hidden; }
+                html, body, #map { height: 100%; width: 100%; }
+                .leaflet-container { background: """ + map_bg + """; }
+                .camera-marker {
+                    background: #2b7fff;
+                    border: 2px solid #ffffff;
+                    border-radius: 50%;
+                    width: 22px;
+                    height: 22px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #ffffff;
+                    font-size: 10px;
+                    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+                }
+        """
 
         html = f"""
         <!DOCTYPE html>
@@ -115,46 +149,34 @@ class LightweightMapWebView(QWebEngineView):
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <style>
-                body {{ padding: 0; margin: 0; background: #f5f5f5; }}
-                html, body, #map {{ height: 100%; width: 100%; }}
-                .camera-marker {{
-                    background: #2563eb;
-                    border: 2px solid #ffffff;
-                    border-radius: 50%;
-                    width: 26px;
-                    height: 26px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #ffffff;
-                    font-size: 12px;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-                }}
+                {marker_css}
             </style>
         </head>
         <body>
             <div id="map"></div>
             <script>
+                var compact = {compact_js};
                 var map = L.map('map', {{
                     zoomControl: false,
                     attributionControl: false,
-                    dragging: true,
+                    dragging: !compact,
                     scrollWheelZoom: false,
                     doubleClickZoom: false,
                     boxZoom: false,
                     keyboard: false
                 }}).setView([{center_lat}, {center_lng}], {zoom});
 
-                L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                    maxZoom: 19
+                L.tileLayer('{tile_url}', {{
+                    maxZoom: 19,
+                    subdomains: 'abcd'
                 }}).addTo(map);
 
                 var cameraIcon = L.divIcon({{
-                    html: '<div class="camera-marker">📹</div>',
-                    className: '',
-                    iconSize: [26, 26],
-                    iconAnchor: [13, 13],
-                    popupAnchor: [0, -10]
+                    html: {pin_html_js},
+                    className: 'dashboard-pin',
+                    iconSize: [24, 32],
+                    iconAnchor: [12, 32],
+                    popupAnchor: [0, -28]
                 }});
 
                 var locations = {locations_json};
@@ -171,7 +193,13 @@ class LightweightMapWebView(QWebEngineView):
                     markers.push(marker);
                 }});
 
-                if (markers.length === 1) {{
+                if (compact) {{
+                    map.setView([{center_lat}, {center_lng}], 19);
+                    if (markers.length > 1) {{
+                        var group = L.featureGroup(markers);
+                        map.fitBounds(group.getBounds().pad(-0.35));
+                    }}
+                }} else if (markers.length === 1) {{
                     map.setView([locations[0].lat, locations[0].lng], 18);
                 }} else if (markers.length > 1) {{
                     var group = L.featureGroup(markers);
@@ -181,7 +209,7 @@ class LightweightMapWebView(QWebEngineView):
         </body>
         </html>
         """
-        self.setHtml(html)
+        self.setHtml(html, QUrl("file:///"))
 
 class MapPickerWidget(QDialog):
     """Dialog to pick a location from a map using lightweight Leaflet."""

@@ -869,10 +869,7 @@ class PersistentMainWindow(QMainWindow):
         try:
             from ui.status_indicator import SystemStatusIndicator
             self.system_status_indicator = SystemStatusIndicator(self)
-            title_layout.addWidget(self.system_status_indicator)
-            
-            # Add some spacing
-            title_layout.addSpacing(10)
+            self.system_status_indicator.hide()  # Hidden as per user request to remove from top navbar
         except Exception as e:
             print(f"Failed to load status indicator: {e}")
 
@@ -1480,30 +1477,11 @@ class PersistentMainWindow(QMainWindow):
         page_layout.setContentsMargins(20, 0, 20, 50)
         page_layout.setSpacing(16)
 
+        # Left Column (Cameras Grid)
         content_widget = QWidget()
         content_widget.setStyleSheet("background-color: transparent;")
         layout = QVBoxLayout(content_widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        header = QWidget()
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(0, 15, 0, 10)
-
-        add_camera_btn = QPushButton("Add Camera")
-        add_camera_btn.setObjectName("newAddButton")
-        add_camera_btn.setStyleSheet("background-color: #333333; color: white; font-weight: bold; border-radius: 8px; padding: 10px 24px; font-size: 14px;")
-        add_camera_btn.clicked.connect(self.show_add_camera_dialog)
-
-        delete_cameras_btn = QPushButton("Delete Camera")
-        delete_cameras_btn.setObjectName("newDeleteButton")
-        delete_cameras_btn.setStyleSheet("background-color: #333333; color: white; font-weight: bold; border-radius: 8px; padding: 10px 24px; font-size: 14px;")
-        delete_cameras_btn.clicked.connect(self.show_delete_cameras_dialog)
-
-        header_layout.addStretch()
-        header_layout.addWidget(add_camera_btn)
-        header_layout.addWidget(delete_cameras_btn)
-
-        layout.addWidget(header)
+        layout.setContentsMargins(0, 15, 0, 0)
 
         # Container for the L-shaped border
         self.l_shape_container = QWidget()
@@ -1539,8 +1517,67 @@ class PersistentMainWindow(QMainWindow):
         layout.addWidget(self.l_shape_container, 1)
         page_layout.addWidget(content_widget, 1)
 
+        # Right Column (Buttons + Card Container)
+        right_column = QWidget()
+        right_column.setStyleSheet("background-color: transparent;")
+        right_layout = QVBoxLayout(right_column)
+        right_layout.setContentsMargins(0, 15, 0, 0)
+        right_layout.setSpacing(0)
+
+        # Header for Add/Delete camera buttons
+        buttons_header = QWidget()
+        buttons_header.setStyleSheet("background-color: transparent;")
+        buttons_layout = QHBoxLayout(buttons_header)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(10)
+
+        add_camera_btn = QPushButton("Add Camera")
+        add_camera_btn.setObjectName("newAddButton")
+        add_camera_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2b2f;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-family: 'Segoe UI', 'Inter', sans-serif;
+            }
+            QPushButton:hover {
+                background-color: #3f4045;
+            }
+        """)
+        add_camera_btn.clicked.connect(self.show_add_camera_dialog)
+
+        delete_cameras_btn = QPushButton("Delete Camera")
+        delete_cameras_btn.setObjectName("newDeleteButton")
+        delete_cameras_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2b2f;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-family: 'Segoe UI', 'Inter', sans-serif;
+            }
+            QPushButton:hover {
+                background-color: #3f4045;
+            }
+        """)
+        delete_cameras_btn.clicked.connect(self.show_delete_cameras_dialog)
+
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(add_camera_btn)
+        buttons_layout.addWidget(delete_cameras_btn)
+
+        right_layout.addWidget(buttons_header)
+        right_layout.addSpacing(25)  # Move the card container a little down
+
         self.telemetry_panel = TelemetryPanel()
-        page_layout.addWidget(self.telemetry_panel, 0, Qt.AlignTop)
+        right_layout.addWidget(self.telemetry_panel, 0, Qt.AlignTop)
+
+        page_layout.addWidget(right_column, 0, Qt.AlignTop)
 
         self.load_saved_cameras()
         self.refresh_dashboard_map()
